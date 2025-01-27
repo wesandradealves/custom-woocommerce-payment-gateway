@@ -10,5 +10,5 @@ wordpress
 # Ignore everything inside plugins
 /wp-content/plugins/*
 
-# Allow tracking of the plugins folder itself
-!/wp-content/plugins/
+# Allow tracking of the bdm-digital-payment-gateway plugin only
+!/wp-content/plugins/bdm-digital-payment-gateway/
