@@ -148,6 +148,31 @@ docker-compose logs <service-name>
 
 Replace `<service-name>` with `wordpress`, `db`, or `phpmyadmin`.
 
+## Accessing the Docker Machine Terminal
+
+To access the terminal of a running Docker container:
+
+1. **Find the Container Name or ID**:
+   ```bash
+   docker ps
+   ```
+   Look for the container name (e.g., `wordpress`, `wordpress_db`, or `phpmyadmin`).
+
+2. **Access the Terminal**:
+   ```bash
+   docker exec -it <container_name_or_id> /bin/bash
+   ```
+   Replace `<container_name_or_id>` with the name or ID of the container you want to access. If the container uses `sh` instead of `bash`, use:
+   ```bash
+   docker exec -it <container_name_or_id> /bin/sh
+   ```
+
+3. **Exit the Terminal**:
+   To exit the container’s terminal, type:
+   ```bash
+   exit
+   ```
+
 ## Volumes
 
 - `wordpress_data`: Stores WordPress files.
