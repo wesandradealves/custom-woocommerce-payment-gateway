@@ -5,12 +5,12 @@ services:
     image: wordpress:latest
     container_name: wordpress
     ports:
-      - "8080:80" 
+      - "8080:80"
     environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
     volumes:
       - wordpress_data:/var/www/html
     depends_on:
@@ -20,10 +20,10 @@ services:
     image: mysql:5.7
     container_name: wordpress_db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${WORDPRESS_DB_NAME}
+      MYSQL_USER: ${WORDPRESS_DB_USER}
+      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
 
@@ -31,11 +31,11 @@ services:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
     ports:
-      - "8081:80" 
+      - "8081:80"
     environment:
-      PMA_HOST: db
+      PMA_HOST: ${WORDPRESS_DB_HOST}
       PMA_USER: root
-      PMA_PASSWORD: rootpassword
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     depends_on:
       - db
 

@@ -1,0 +1,14 @@
+# General rules
+.git
+vendor
+wordpress
+
+# Allow wp-content but ignore its contents by default
+/wp-content/*
+!/wp-content/plugins/
+
+# Ignore everything inside plugins
+/wp-content/plugins/*
+
+# Allow tracking of the plugins folder itself
+!/wp-content/plugins/
