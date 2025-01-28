@@ -1,0 +1,43 @@
+.bdm-settings-page {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bdm-settings-page  .form-table th {
+    vertical-align: middle;
+}
+
+.bdm-page-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #333333;
+}
+
+.bdm-description {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #555555;
+}
+
+.bdm-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.bdm-settings-form input {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.bdm-settings-form input:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 3px rgba(0, 115, 170, 0.5);
+}
