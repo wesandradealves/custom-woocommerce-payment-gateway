@@ -1,46 +1,39 @@
-version: '3.8'
-
+version: '3.1'
 services:
   wordpress:
     build:
       context: .
-      dockerfile: Dockerfile 
-    container_name: wordpress
+      dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8000:80"
     environment:
       WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
       WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
       WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
       WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
-    volumes:
-      - wordpress_data:/var/www/html
+    env_file: 
+      - .env
     depends_on:
-      - db
-
-  db:
-    image: mysql:5.7
-    container_name: wordpress_db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${WORDPRESS_DB_NAME}
-      MYSQL_USER: ${WORDPRESS_DB_USER}
-      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      - mysql
     volumes:
-      - db_data:/var/lib/mysql
-
+      - ./bdm-digital-payment-gateway:/var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    env_file:
+      - .env
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    links:
+      - mysql
     ports:
       - "8081:80"
     environment:
       PMA_HOST: ${WORDPRESS_DB_HOST}
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    depends_on:
-      - db
-
-volumes:
-  wordpress_data:
-  db_data:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    env_file:
+      - .env

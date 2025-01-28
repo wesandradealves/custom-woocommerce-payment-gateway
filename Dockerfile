@@ -1,42 +1,60 @@
-# Base WordPress image
-FROM wordpress:latest
+# Use the WordPress base image with PHP 8.2
+FROM wordpress:php8.2-apache
 
-# Install required tools and PHP extensions
+# Install system dependencies and PHP extensions required for Composer and WP-CLI
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     git \
-    && docker-php-ext-install mysqli && docker-php-ext-enable mysqli
-
-# Install Composer
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    ca-certificates \
+    && docker-php-ext-configure gd \
+    && docker-php-ext-install gd zip \
+    && rm -rf /var/lib/apt/lists/*
+    
+# Install Composer globally inside the container
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Set working directory to the WordPress root directory
+# Install WP-CLI globally
+RUN curl -sS https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
+    && chmod +x /usr/local/bin/wp
+
+# Remove default WordPress files from the image
+RUN rm -rf /var/www/html/*
+
+# Set the working directory to the WordPress root directory
 WORKDIR /var/www/html
 
-# Copy Composer files to the container root
-COPY ./composer.json ./composer.lock ./
+# Copy composer.json into the container
+COPY composer.json /var/www/html/composer.json
 
-# Copy `index.php` and `wp-config.php` to the container root
-COPY ./index.php ./wp-config.php ./
+# Allow all plugins to be used
+RUN composer config --no-plugins allow-plugins.* true
 
-# Copy the `wp-content` folder to the container root
-COPY ./wp-content ./wp-content
+# Install WordPress via Composer (this will install WordPress in the container's wp-content)
+RUN composer require johnpbloch/wordpress
 
-# Copy the WordPress core files to the `/wordpress` directory
-COPY ./wordpress ./wordpress
+# Copy the custom plugin into the WordPress plugins directory inside the container
+COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
-# Run Composer to install dependencies
-RUN composer install --no-dev --prefer-dist --optimize-autoloader
+# Remove default plugins (Hello Dolly and Akismet)
+RUN rm -rf /var/www/html/wp-content/plugins/hello.php && \
+    rm -rf /var/www/html/wp-content/plugins/akismet && \
+    rm -rf /var/www/html/wp-content/plugins/hello-dolly && \
+    rm -rf /var/www/html/wp-content/plugins/akismet/*
 
-# Configure Apache to serve from the wordpress directory
-COPY ./apache/000-default.conf /etc/apache2/sites-available/000-default.conf
+# Ensure proper permissions on the plugin files
+RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
+    chmod -R 755 /var/www/html/wp-content/plugins
 
-# Set appropriate permissions
-RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
+# Copy the .env file into the container
+COPY .env /var/www/.env
 
-# Expose WordPress default port
+# Remove default WordPress files from the image
+RUN rm -rf /var/www/html/wordpress
+
+# Expose port 80
 EXPOSE 80
-
-# Start the container with Apache
-CMD ["apache2-foreground"]
