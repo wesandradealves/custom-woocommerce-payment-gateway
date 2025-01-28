@@ -1,5 +1,5 @@
 
-# Wordpress BDM Digital Plugin
+# BDM Digital Wordpress Plugin
 
 This repository contains a fully Dockerized WordPress application with Composer for managing dependencies. The application includes:
 - WordPress installed via Composer.
