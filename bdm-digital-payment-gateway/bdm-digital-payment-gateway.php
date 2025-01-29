@@ -30,7 +30,7 @@ function bdm_enqueue_admin_styles($hook) {
     if ($hook === 'settings_page_' . BDM_PAYMENT_GATEWAY_MENU_SLUG) {
         wp_enqueue_style(
             'bdm-admin-styles',
-            plugin_dir_url(__FILE__) . 'css/admin-styles.css'
+            plugin_dir_url(__FILE__) . 'assets/css/style.css'
         );
     }
 }
@@ -38,11 +38,10 @@ function bdm_enqueue_admin_styles($hook) {
 // Renderizar a página de configurações
 function bdm_render_settings_page() {
     ?>
-    <div class="wrap bdm-settings-page">
-        <h1 class="bdm-page-title"><?php esc_html_e('Configurações do BDM Digital Payment Gateway', 'bdm-digital-payment-gateway'); ?></h1>
-        <p class="bdm-description">
-            <?php esc_html_e('Configure os detalhes necessários para integrar o gateway de pagamento BDM Digital.', 'bdm-digital-payment-gateway'); ?>
-        </p>
+    <section id="bdm-settings-page" class="p-5">
+        <header class="d-block mb-4">
+            <img src="<?php echo plugin_dir_url( __FILE__ ) . 'assets/img/logo.jpg'; ?>" alt="BDM Digital" />
+        </header>
         <form method="post" action="options.php" class="bdm-settings-form">
             <?php
             settings_fields(BDM_PAYMENT_GATEWAY_OPTION_KEY);
@@ -50,7 +49,7 @@ function bdm_render_settings_page() {
             submit_button(__('Salvar Configurações', 'bdm-digital-payment-gateway'), 'primary large');
             ?>
         </form>
-    </div>
+    </section>
     <?php
 }
 
@@ -91,7 +90,7 @@ function bdm_initialize_settings() {
 
 // Descrição da seção
 function bdm_section_description() {
-    echo '<p>' . __('Insira os detalhes necessários para integração com o gateway de pagamento BDM Digital. Todos os campos são obrigatórios.', 'bdm-digital-payment-gateway') . '</p>';
+    echo '<p>' . __('Insira os detalhes necessários para integração com o gateway de pagamento BDM Digital.<br/>Todos os campos são obrigatórios.', 'bdm-digital-payment-gateway') . '</p>';
 }
 
 // Sanitizar e validar configurações
