@@ -38,7 +38,7 @@ function bdm_enqueue_admin_styles($hook) {
 // Renderizar a página de configurações
 function bdm_render_settings_page() {
     ?>
-    <section id="bdm-settings-page" class="p-5">
+    <section id="bdm-settings-page" class="p-5 animate__animated animate__fadeIn">
         <header class="d-block mb-4">
             <img src="<?php echo plugin_dir_url( __FILE__ ) . 'assets/img/logo.jpg'; ?>" alt="BDM Digital" />
         </header>
