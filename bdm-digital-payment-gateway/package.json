@@ -6,6 +6,7 @@
     "scss": "sass --watch assets/scss:assets/css"
   },
   "dependencies": {
+    "animate.css": "^4.1.1",
     "bootstrap": "^5.3.3"
   }
 }
