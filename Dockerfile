@@ -1,7 +1,7 @@
 # Use the WordPress base image with PHP 8.2
 FROM wordpress:php8.2-apache
 
-# Install system dependencies and PHP extensions required for Composer and WP-CLI
+# Install system dependencies and PHP extensions required for Composer, WP-CLI, and Node.js
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libzip-dev \
     ca-certificates \
+    nodejs \
+    npm \
     && docker-php-ext-configure gd \
     && docker-php-ext-install gd zip \
     && rm -rf /var/lib/apt/lists/*
@@ -40,15 +42,22 @@ RUN composer require johnpbloch/wordpress
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
+# Set the working directory to the plugin directory
+WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+
+# Install npm dependencies and compile SCSS
+RUN npm install
+RUN npm run scss
+
+# Ensure proper permissions on the plugin files
+RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
+    chmod -R 755 /var/www/html/wp-content/plugins
+
 # Remove default plugins (Hello Dolly and Akismet)
 RUN rm -rf /var/www/html/wp-content/plugins/hello.php && \
     rm -rf /var/www/html/wp-content/plugins/akismet && \
     rm -rf /var/www/html/wp-content/plugins/hello-dolly && \
     rm -rf /var/www/html/wp-content/plugins/akismet/*
-
-# Ensure proper permissions on the plugin files
-RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
-    chmod -R 755 /var/www/html/wp-content/plugins
 
 # Copy the .env file into the container
 COPY .env /var/www/.env
