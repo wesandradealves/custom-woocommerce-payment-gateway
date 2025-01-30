@@ -52,10 +52,13 @@ COPY wordpress/ /var/www/html/
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
 # Set the working directory to the plugin directory
-#WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
 # Install npm dependencies and compile SCSS
-#RUN npm install
+RUN npm install && npm run build
+
+# Set the working directory to the WordPress root directory
+WORKDIR /var/www/html
 
 # Ensure proper permissions on the plugin files
 RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \

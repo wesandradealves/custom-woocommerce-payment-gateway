@@ -3,7 +3,8 @@
     "sass": "^1.83.4"
   },
   "scripts": {
-    "scss": "sass --watch assets/scss:assets/css"
+    "build": "sass assets/scss:assets/css",
+    "watch": "sass --watch assets/scss:assets/css"
   },
   "dependencies": {
     "animate.css": "^4.1.1",
