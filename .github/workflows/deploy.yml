@@ -19,25 +19,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # - name: Install Docker and Docker Compose
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y docker.io
-      #     sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-      #     sudo chmod +x /usr/local/bin/docker-compose
-
-      # - name: Build Docker images
-      #   run: |
-      #     docker-compose -f docker-compose.yml build
-
-      # - name: Run tests
-      #   run: |
-      #     # Coloque seus testes aqui, se necessário
-      #     echo "Rodando testes"
-      #     # Exemplo:
-      #     # npm install
-      #     # npm test
-
       - name: Deploy to EC2 with Docker Compose
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
