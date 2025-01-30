@@ -36,6 +36,9 @@ COPY composer.json /var/www/html/composer.json
 # Allow all plugins to be used
 RUN composer config --no-plugins allow-plugins.* true
 
+# Allow johnpbloch/wordpress-core-installer explicitly
+RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer true
+
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
 RUN composer require johnpbloch/wordpress
 
@@ -47,7 +50,6 @@ WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
 # Install npm dependencies and compile SCSS
 RUN npm install
-RUN npm run scss
 
 # Ensure proper permissions on the plugin files
 RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
