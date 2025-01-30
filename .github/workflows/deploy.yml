@@ -23,7 +23,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ubuntu/apps/plugin-wordpress
-            git pull origin main  # Ou o comando adequado para seu repositório
-            docker-compose -f docker-compose.yml down  # Para parar os containers antigos
-            docker-compose -f docker-compose.yml up -d --build  # Para rodar os novos containers
+            git pull origin main
+            docker-compose -f docker-compose.yml down
+            docker-compose -f docker-compose.yml up -d --build
           EOF
