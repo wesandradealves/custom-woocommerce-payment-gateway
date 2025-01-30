@@ -16,7 +16,9 @@ services:
     depends_on:
       - mysql
     volumes:
+      - ./wordpress:/var/www/html  # Mount WordPress core files
       - ./bdm-digital-payment-gateway:/var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+
   mysql:
     image: mysql:5.7
     environment:

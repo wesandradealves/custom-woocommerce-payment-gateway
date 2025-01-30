@@ -1,6 +1,9 @@
 # Use the WordPress base image with PHP 8.2
 FROM wordpress:php8.2-apache
 
+# Ensure the /var/www/html directory exists
+RUN mkdir -p /var/www/html && chown -R www-data:www-data /var/www/html
+
 # Install system dependencies and PHP extensions required for Composer, WP-CLI, and Node.js
 RUN apt-get update && apt-get install -y \
     curl \
@@ -16,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd \
     && docker-php-ext-install gd zip \
     && rm -rf /var/lib/apt/lists/*
-    
+
 # Install Composer globally inside the container
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -40,16 +43,19 @@ RUN composer config --no-plugins allow-plugins.* true
 RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer true
 
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
-RUN composer require johnpbloch/wordpress
+#RUN composer require johnpbloch/wordpress
+
+# Copy WordPress files (contents only, not the folder itself)
+COPY wordpress/ /var/www/html/
 
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
 # Set the working directory to the plugin directory
-WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+#WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
 # Install npm dependencies and compile SCSS
-RUN npm install
+#RUN npm install
 
 # Ensure proper permissions on the plugin files
 RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
