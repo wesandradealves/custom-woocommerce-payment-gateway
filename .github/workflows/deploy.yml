@@ -40,7 +40,7 @@ jobs:
 
       - name: Deploy to EC2 with Docker Compose
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ubuntu/apps/plugin-wordpress
             git pull origin main  # Ou o comando adequado para seu repositório
             docker-compose -f docker-compose.yml down  # Para parar os containers antigos
