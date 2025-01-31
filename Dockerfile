@@ -44,9 +44,10 @@ RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer t
 
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
 #RUN composer require johnpbloch/wordpress
+RUN composer install
 
 # Copy WordPress files (contents only, not the folder itself)
-COPY wordpress/ /var/www/html/
+# COPY wordpress/ /var/www/html/
 
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
@@ -69,7 +70,7 @@ RUN rm -rf /var/www/html/wp-content/plugins/hello.php && \
     rm -rf /var/www/html/wp-content/plugins/akismet && \
     rm -rf /var/www/html/wp-content/plugins/hello-dolly && \
     rm -rf /var/www/html/wp-content/plugins/akismet/*
-
+    
 # Copy the .env file into the container
 COPY .env /var/www/.env
 
@@ -78,3 +79,4 @@ RUN rm -rf /var/www/html/wordpress
 
 # Expose port 80
 EXPOSE 80
+

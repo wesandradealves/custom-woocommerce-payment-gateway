@@ -1,23 +1,29 @@
-{
-    "name": "wordpress/wordpress",
-    "description": "WordPress with Composer",
-    "type": "project",
-    "require": {
-        "johnpbloch/wordpress": "^5.8"
-    },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://wpackagist.org"
+    {
+        "name": "wordpress/wordpress",
+        "description": "WordPress with Composer",
+        "type": "project",
+        "require": {
+            "johnpbloch/wordpress": "^5.8"
+        },
+        "repositories": [
+            {
+                "type": "composer",
+                "url": "https://wpackagist.org"
+            }
+        ],
+        "config": {
+            "preferred-install": "dist",
+            "optimize-autoloader": true
+        },
+        "extra": {
+            "wordpress-install-dir": "/var/www/html",
+            "installer-paths": {
+                "/var/www/html/wp-content/plugins/{$name}/": ["type:wordpress-plugin"]
+            }
+        },
+        "scripts": {
+            "post-install-cmd": [
+                "wp core update-db"
+            ]
         }
-    ],
-    "config": {
-        "preferred-install": "dist",
-        "optimize-autoloader": true
-    },
-    "scripts": {
-        "post-install-cmd": [
-            "wp core update-db"
-        ]
     }
-}
