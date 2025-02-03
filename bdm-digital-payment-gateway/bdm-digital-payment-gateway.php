@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name: WooCommerce BDM Digital Payment Gateway
+ * Plugin Name: BDM Digital Payment Gateway
  * Plugin URI: https://mercado.dourado.cash/
  * Description: Um plugin para processar pagamentos utilizando BDM Digital. Suporta geração de QR codes, processamento de pagamentos, validação de transações e fornecimento de confirmações. Permite integração com várias carteiras e serviços associados.
  * Version: 0.0.4
@@ -11,6 +11,7 @@
 // Definir constantes
 define('BDM_PAYMENT_GATEWAY_OPTION_KEY', 'bdm_payment_gateway_options');
 define('BDM_PAYMENT_GATEWAY_MENU_SLUG', 'bdm-payment-gateway-settings');
+include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 
 // Registrar menu de administração
 add_action('admin_menu', 'bdm_register_settings_page');
@@ -154,4 +155,70 @@ function bdm_add_settings_link($links) {
     $settings_link = '<a href="' . esc_url($url) . '">' . __('Configurações', 'bdm-digital-payment-gateway') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
+}
+
+// Register Template
+
+add_filter('theme_page_templates', 'bdm_register_custom_template');
+function bdm_register_custom_template($templates) {
+    $templates['bdm-checkout-template.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
+    return $templates;
+}
+
+add_filter('template_include', 'bdm_load_custom_template');
+function bdm_load_custom_template($template) {
+    if (is_page('checkout')) {
+        $plugin_template = plugin_dir_path(__FILE__) . 'templates/checkout-template.php';
+        if (file_exists($plugin_template)) {
+            return $plugin_template;
+        }
+    }
+    return $template;
+}
+
+
+// Hook into plugin activation
+register_activation_hook(__FILE__, 'bdm_create_checkout_page');
+
+function bdm_create_checkout_page() {
+    $checkout_page = [
+        'post_title'    => 'Checkout',
+        'post_content'  => '',
+        'post_status'   => 'publish',
+        'post_type'     => 'page',
+        'post_name'     => 'checkout',
+    ];
+
+    $existing_page = get_page_by_path('checkout');
+    if (!$existing_page) {
+        $post_id = wp_insert_post($checkout_page);
+        if ($post_id) {
+            update_post_meta($post_id, '_wp_page_template', 'bdm-checkout-template.php');
+        }
+    }
+}
+
+register_uninstall_hook(__FILE__, 'bdm_remove_checkout_page');
+
+function bdm_remove_checkout_page() {
+    $checkout_page = get_page_by_path('checkout');
+    if ($checkout_page) {
+        wp_delete_post($checkout_page->ID, true);
+    }
+}
+
+add_action('wp_enqueue_scripts', 'bdm_enqueue_checkout_scripts');
+
+// Enqueue Scripts
+
+function bdm_enqueue_checkout_scripts() {
+    if (is_page('checkout')) {
+        wp_enqueue_script(
+            'bdm-checkout-app',
+            plugin_dir_url(__FILE__) . 'assets/js/app.js',
+            [],
+            '1.0.0',
+            true
+        );
+    }
 }
