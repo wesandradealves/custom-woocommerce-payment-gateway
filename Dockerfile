@@ -43,11 +43,7 @@ RUN composer config --no-plugins allow-plugins.* true
 RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer true
 
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
-#RUN composer require johnpbloch/wordpress
 RUN composer install
-
-# Copy WordPress files (contents only, not the folder itself)
-# COPY wordpress/ /var/www/html/
 
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
@@ -65,17 +61,19 @@ WORKDIR /var/www/html
 RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
     chmod -R 755 /var/www/html/wp-content/plugins
 
-# Remove default plugins (Hello Dolly and Akismet)
-RUN rm -rf /var/www/html/wp-content/plugins/hello.php && \
-    rm -rf /var/www/html/wp-content/plugins/akismet && \
-    rm -rf /var/www/html/wp-content/plugins/hello-dolly && \
-    rm -rf /var/www/html/wp-content/plugins/akismet/*
+# Ensure proper permissions before deleting
+RUN chmod -R 777 /var/www/html/wp-content/plugins && \
+    ls -lah /var/www/html/wp-content/plugins && \
+    rm -rf /var/www/html/wp-content/plugins/hello.php /var/www/html/wp-content/plugins/hello-dolly /var/www/html/wp-content/plugins/akismet
+
     
 # Copy the .env file into the container
 COPY .env /var/www/.env
 
 # Remove default WordPress files from the image
 RUN rm -rf /var/www/html/wordpress
+
+RUN composer update
 
 # Expose port 80
 EXPOSE 80
