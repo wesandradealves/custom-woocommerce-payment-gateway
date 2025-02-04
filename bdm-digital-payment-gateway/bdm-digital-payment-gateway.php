@@ -41,13 +41,13 @@ function bdm_render_settings_page() {
     ?>
     <section id="bdm-settings-page" class="p-5 animate__animated animate__fadeIn">
         <header class="d-block mb-4">
-            <img src="<?php echo plugin_dir_url( __FILE__ ) . 'assets/img/logo.jpg'; ?>" alt="BDM Digital" />
+            <img src="<?php echo plugin_dir_url( __FILE__ ) . 'assets/img/logo.png'; ?>" alt="BDM Digital" />
         </header>
         <form method="post" action="options.php" class="bdm-settings-form">
             <?php
-            settings_fields(BDM_PAYMENT_GATEWAY_OPTION_KEY);
-            do_settings_sections(BDM_PAYMENT_GATEWAY_MENU_SLUG);
-            submit_button(__('Salvar Configurações', 'bdm-digital-payment-gateway'), 'primary large');
+                settings_fields(BDM_PAYMENT_GATEWAY_OPTION_KEY);
+                do_settings_sections(BDM_PAYMENT_GATEWAY_MENU_SLUG);
+                submit_button(__('Salvar Configurações', 'bdm-digital-payment-gateway'), 'primary large');
             ?>
         </form>
     </section>
@@ -167,7 +167,7 @@ function bdm_register_custom_template($templates) {
 
 add_filter('template_include', 'bdm_load_custom_template');
 function bdm_load_custom_template($template) {
-    if (is_page('checkout')) {
+    if (is_page('bdm-checkout')) {
         $plugin_template = plugin_dir_path(__FILE__) . 'templates/checkout-template.php';
         if (file_exists($plugin_template)) {
             return $plugin_template;
@@ -178,18 +178,53 @@ function bdm_load_custom_template($template) {
 
 
 // Hook into plugin activation
-register_activation_hook(__FILE__, 'bdm_create_checkout_page');
+// register_activation_hook(__FILE__, 'bdm_create_checkout_page');
+
+// function bdm_create_checkout_page() {
+//     $checkout_page = [
+//         'post_title'    => 'BDM - Checkout',
+//         'post_content'  => '',
+//         'post_status'   => 'publish',
+//         'post_type'     => 'page',
+//         'post_name'     => 'bdm-checkout',
+//     ];
+
+//     $existing_page = get_page_by_path('bdm-checkout');
+//     if (!$existing_page) {
+//         $post_id = wp_insert_post($checkout_page);
+//         if ($post_id) {
+//             update_post_meta($post_id, '_wp_page_template', 'bdm-checkout-template.php');
+//         }
+//     }
+// }
+
+register_activation_hook(__FILE__, 'bdm_plugin_activation');
+
+function bdm_plugin_activation() {
+    // Check if WooCommerce is active
+    if (!is_plugin_active('woocommerce/woocommerce.php')) {
+        deactivate_plugins(plugin_basename(__FILE__));
+        wp_die(
+            __('BDM Digital Payment Gateway requires WooCommerce to be installed and activated.', 'bdm-digital-payment-gateway'),
+            __('Plugin Activation Error', 'bdm-digital-payment-gateway'),
+            ['back_link' => true]
+        );
+    }
+
+    // Create checkout page if WooCommerce is active
+    bdm_create_checkout_page();
+}
 
 function bdm_create_checkout_page() {
     $checkout_page = [
-        'post_title'    => 'Checkout',
+        'post_title'    => 'BDM - Checkout',
         'post_content'  => '',
         'post_status'   => 'publish',
         'post_type'     => 'page',
-        'post_name'     => 'checkout',
+        'post_name'     => 'bdm-checkout',
     ];
 
-    $existing_page = get_page_by_path('checkout');
+    $existing_page = get_page_by_path('bdm-checkout');
     if (!$existing_page) {
         $post_id = wp_insert_post($checkout_page);
         if ($post_id) {
@@ -198,10 +233,23 @@ function bdm_create_checkout_page() {
     }
 }
 
+// Display admin notice if WooCommerce is missing
+add_action('admin_notices', 'bdm_woocommerce_missing_notice');
+
+function bdm_woocommerce_missing_notice() {
+    if (!is_plugin_active('woocommerce/woocommerce.php')) {
+        echo '<div class="notice notice-error"><p>'
+            . __('BDM Digital Payment Gateway requires WooCommerce to function properly. Please install and activate WooCommerce.', 'bdm-digital-payment-gateway')
+            . '</p></div>';
+    }
+}
+
+
+// Remove checkout page when uninstalling
 register_uninstall_hook(__FILE__, 'bdm_remove_checkout_page');
 
 function bdm_remove_checkout_page() {
-    $checkout_page = get_page_by_path('checkout');
+    $checkout_page = get_page_by_path('bdm-checkout');
     if ($checkout_page) {
         wp_delete_post($checkout_page->ID, true);
     }
@@ -212,7 +260,7 @@ add_action('wp_enqueue_scripts', 'bdm_enqueue_checkout_scripts');
 // Enqueue Scripts
 
 function bdm_enqueue_checkout_scripts() {
-    if (is_page('checkout')) {
+    if (is_page('bdm-checkout')) {
         wp_enqueue_script(
             'bdm-checkout-app',
             plugin_dir_url(__FILE__) . 'assets/js/app.js',
