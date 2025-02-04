@@ -15,73 +15,37 @@
         #bdm-settings-page {
             @for $i from 1 through 3 {
                 h#{$i} {
-                    font-weight: 400;
-                    color: #a0a0a0;
+                    font-weight: 300;
+                    color: rgba(0, 0, 0, 0.6);
                     @include toRem(font-size, 32)
                 }
             }    
             p {
-                color: #777777;
-                font-weight: 500;
+                color: rgba(0, 0, 0, 0.6);
+                font-weight: 400;
                 @include toRem(font-size, 14)
             }
             .form-table {
                 input {
                     border: initial !important;
-                    border-radius: 999px;
+                    border-radius: 8px;
                     padding: 6px 18px;
                     font-weight: 300;
                     box-shadow: initial !important;
                     outline: initial !important;
-                    background-color: whitesmoke;
+                    background-color: rgba(3, 3, 2, 0.05);
                 }
             }
             .button {
                 border-radius: 999px;
                 border: 0;
                 padding: 6px 18px;
+                @include toRem(font-size, 16);
                 &[class*="primary"] {
-                    background-color: #ba7301;
+                    background-color: #BA7301;
                 }
             }
         }
         padding: 0;
     }
 }
-
-// .bdm-settings-page  .form-table th {
-//     vertical-align: middle;
-// }
-
-// .bdm-page-title {
-//     font-size: 24px;
-//     margin-bottom: 10px;
-//     color: #333333;
-// }
-
-// .bdm-description {
-//     font-size: 16px;
-//     margin-bottom: 20px;
-//     color: #555555;
-// }
-
-// .bdm-settings-form {
-//     display: flex;
-//     flex-direction: column;
-//     gap: 15px;
-// }
-
-// .bdm-settings-form input {
-//     padding: 10px;
-//     font-size: 14px;
-//     border: 1px solid #cccccc;
-//     border-radius: 4px;
-//     width: 100%;
-// }
-
-// .bdm-settings-form input:focus {
-//     border-color: #0073aa;
-//     outline: none;
-//     box-shadow: 0 0 3px rgba(0, 115, 170, 0.5);
-// }
-
