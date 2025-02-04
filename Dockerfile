@@ -48,6 +48,9 @@ RUN composer install
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
+# Copying Woocommerce to container
+COPY ./woocommerce /var/www/html/wp-content/plugins/woocommerce
+
 # Set the working directory to the plugin directory
 WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
