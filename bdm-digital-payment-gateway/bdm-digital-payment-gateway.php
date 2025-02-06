@@ -14,16 +14,16 @@ define('BDM_PAYMENT_GATEWAY_MENU_SLUG', 'bdm-payment-gateway-settings');
 include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 
 // Registrar menu de administração
-add_action('admin_menu', 'bdm_register_settings_page');
-function bdm_register_settings_page() {
-    add_options_page(
-        __('Configurações do BDM Digital Payment Gateway', 'bdm-digital-payment-gateway'), 
-        __('BDM Digital Payment Gateway', 'bdm-digital-payment-gateway'), 
-        'manage_options', 
-        BDM_PAYMENT_GATEWAY_MENU_SLUG, 
-        'bdm_render_settings_page'
-    );
-}
+// add_action('admin_menu', 'bdm_register_settings_page');
+// function bdm_register_settings_page() {
+//     add_options_page(
+//         __('Configurações do BDM Digital Payment Gateway', 'bdm-digital-payment-gateway'), 
+//         __('BDM Digital Payment Gateway', 'bdm-digital-payment-gateway'), 
+//         'manage_options', 
+//         BDM_PAYMENT_GATEWAY_MENU_SLUG, 
+//         'bdm_render_settings_page'
+//     );
+// }
 
 // Carregar estilos personalizados
 add_action('admin_enqueue_scripts', 'bdm_enqueue_admin_styles');
@@ -151,7 +151,7 @@ function bdm_render_field($args) {
 // Adicionar link de configurações na lista de plugins
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'bdm_add_settings_link');
 function bdm_add_settings_link($links) {
-    $url = admin_url('options-general.php?page=' . BDM_PAYMENT_GATEWAY_MENU_SLUG);
+    $url = admin_url('admin.php?page=wc-settings&tab=checkout&section=bdm-digital');
     $settings_link = '<a href="' . esc_url($url) . '">' . __('Configurações', 'bdm-digital-payment-gateway') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
@@ -178,26 +178,6 @@ function bdm_load_custom_template($template) {
 
 
 // Hook into plugin activation
-// register_activation_hook(__FILE__, 'bdm_create_checkout_page');
-
-// function bdm_create_checkout_page() {
-//     $checkout_page = [
-//         'post_title'    => 'BDM - Checkout',
-//         'post_content'  => '',
-//         'post_status'   => 'publish',
-//         'post_type'     => 'page',
-//         'post_name'     => 'bdm-checkout',
-//     ];
-
-//     $existing_page = get_page_by_path('bdm-checkout');
-//     if (!$existing_page) {
-//         $post_id = wp_insert_post($checkout_page);
-//         if ($post_id) {
-//             update_post_meta($post_id, '_wp_page_template', 'bdm-checkout-template.php');
-//         }
-//     }
-// }
-
 register_activation_hook(__FILE__, 'bdm_plugin_activation');
 
 function bdm_plugin_activation() {
@@ -296,7 +276,7 @@ function misha_init_gateway_class() {
             $this->icon = ''; 
             $this->has_fields = true; 
             $this->method_title = 'BDM Digital Payment Gateway';
-            $this->method_description = 'Processe pagamentos com BDM Digital'; 
+            $this->method_description = 'Payment processing with BDM Digital'; 
         
             $this->supports = array(
                 'products'
@@ -329,8 +309,8 @@ function misha_init_gateway_class() {
  		public function init_form_fields(){
             $this->form_fields = array(
                 'enabled' => array(
-                    'title'       => 'Habilitar',
-                    'label'       => 'Habilitar pagamentos com BDM Digital',
+                    'title'       => 'Enable',
+                    'label'       => 'Enable paymets with BDM Digital',
                     'type'        => 'checkbox',
                     'description' => '',
                     'default'     => 'no'
@@ -345,14 +325,14 @@ function misha_init_gateway_class() {
                 'description' => array(
                     'title'       => 'Description',
                     'type'        => 'textarea',
-                    'description' => 'This controls the description which the user sees during checkout.',
+                    // 'description' => 'This controls the description which the user sees during checkout.',
                     'default'     => 'Pague com BDM Digital',
                 ),
                 'testmode' => array(
                     'title'       => 'Sandbox',
                     'label'       => 'Sandbox',
                     'type'        => 'checkbox',
-                    'description' => 'Place the payment gateway in test mode using test API keys.',
+                    // 'description' => 'Place the payment gateway in test mode using test API keys.',
                     'default'     => 'yes',
                     'desc_tip'    => true,
                 ),
