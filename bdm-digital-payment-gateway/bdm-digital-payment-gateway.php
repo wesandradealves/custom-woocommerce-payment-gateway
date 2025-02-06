@@ -296,7 +296,7 @@ function misha_init_gateway_class() {
             $this->icon = ''; 
             $this->has_fields = true; 
             $this->method_title = 'BDM Digital Payment Gateway';
-            $this->method_description = 'Fature suas vendas com BDM Digital'; 
+            $this->method_description = 'Processe pagamentos com BDM Digital'; 
         
             $this->supports = array(
                 'products'
@@ -310,8 +310,8 @@ function misha_init_gateway_class() {
             $this->description = $this->get_option( 'description' );
             $this->enabled = $this->get_option( 'enabled' );
             $this->testmode = 'yes' === $this->get_option( 'testmode' );
-            $this->private_key = $this->testmode ? $this->get_option( 'test_private_key' ) : $this->get_option( 'private_key' );
-            $this->publishable_key = $this->testmode ? $this->get_option( 'test_publishable_key' ) : $this->get_option( 'publishable_key' );
+            $this->api_key = $this->get_option( 'api_key' );
+            // $this->publishable_key = $this->testmode ? $this->get_option( 'test_publishable_key' ) : $this->get_option( 'publishable_key' );
         
             // This action hook saves the settings
             add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -329,8 +329,8 @@ function misha_init_gateway_class() {
  		public function init_form_fields(){
             $this->form_fields = array(
                 'enabled' => array(
-                    'title'       => 'Enable/Disable',
-                    'label'       => 'Enable Misha Gateway',
+                    'title'       => 'Habilitar',
+                    'label'       => 'Habilitar pagamentos com BDM Digital',
                     'type'        => 'checkbox',
                     'description' => '',
                     'default'     => 'no'
@@ -339,14 +339,14 @@ function misha_init_gateway_class() {
                     'title'       => 'Title',
                     'type'        => 'text',
                     'description' => 'This controls the title which the user sees during checkout.',
-                    'default'     => 'Credit Card',
+                    'default'     => 'BDM Digital',
                     'desc_tip'    => true,
                 ),
                 'description' => array(
                     'title'       => 'Description',
                     'type'        => 'textarea',
                     'description' => 'This controls the description which the user sees during checkout.',
-                    'default'     => 'Pay with your credit card via our super-cool payment gateway.',
+                    'default'     => 'Pague com BDM Digital',
                 ),
                 'testmode' => array(
                     'title'       => 'Sandbox',
@@ -356,22 +356,22 @@ function misha_init_gateway_class() {
                     'default'     => 'yes',
                     'desc_tip'    => true,
                 ),
-                'test_publishable_key' => array(
-                    'title'       => 'Test Publishable Key',
+                'api_key' => array(
+                    'title'       => 'API Key',
                     'type'        => 'text'
                 ),
-                'test_private_key' => array(
-                    'title'       => 'Test Private Key',
-                    'type'        => 'password',
-                ),
-                'publishable_key' => array(
-                    'title'       => 'Live Publishable Key',
-                    'type'        => 'text'
-                ),
-                'private_key' => array(
-                    'title'       => 'Live Private Key',
-                    'type'        => 'password'
-                )
+                // 'test_private_key' => array(
+                //     'title'       => 'Test Private Key',
+                //     'type'        => 'password',
+                // ),
+                // 'publishable_key' => array(
+                //     'title'       => 'Live Publishable Key',
+                //     'type'        => 'text'
+                // ),
+                // 'private_key' => array(
+                //     'title'       => 'Live Private Key',
+                //     'type'        => 'password'
+                // )
             );
 	 	}
 
