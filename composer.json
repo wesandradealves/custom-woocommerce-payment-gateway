@@ -16,10 +16,10 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
-    	"allow-plugins": {
-      	   "composer/installers": true,
-      	   "johnpbloch/wordpress-core-installer": true
-    	},
+        "allow-plugins": {
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        },        
         "preferred-install": "dist",
         "optimize-autoloader": true
     },
