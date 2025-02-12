@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     git \
+    nano \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
@@ -50,6 +51,7 @@ COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-
 
 # Copying Woocommerce to container
 COPY ./woocommerce /var/www/html/wp-content/plugins/woocommerce
+COPY ./storefront /var/www/html/wp-content/themes/storefront
 
 # Set the working directory to the plugin directory
 WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway

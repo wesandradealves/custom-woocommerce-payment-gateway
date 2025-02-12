@@ -256,143 +256,144 @@ function bdm_enqueue_checkout_scripts() {
  */
 add_filter( 'woocommerce_payment_gateways', 'misha_add_gateway_class' );
 function misha_add_gateway_class( $gateways ) {
-	$gateways[] = 'WC_Misha_Gateway'; // your class name is here
+	$gateways[] = 'WC_BDM_GATEWAY'; // your class name is here
 	return $gateways;
 }
 
 /*
  * The class itself, please note that it is inside plugins_loaded action hook
  */
-add_action( 'plugins_loaded', 'misha_init_gateway_class' );
-function misha_init_gateway_class() {
+add_action( 'plugins_loaded', 'init_gateway_class' );
+function init_gateway_class() {
 
-	class WC_Misha_Gateway extends WC_Payment_Gateway {
+    class WC_BDM_GATEWAY extends WC_Payment_Gateway {
 
- 		/**
- 		 * Class constructor, more about it in Step 3
- 		 */
- 		public function __construct() {
-            $this->id = 'bdm-digital'; 
-            $this->icon = ''; 
-            $this->has_fields = true; 
-            $this->method_title = 'BDM Digital Payment Gateway';
-            $this->method_description = 'Payment processing with BDM Digital'; 
-        
-            $this->supports = array(
-                'products'
-            );
-
+        public function __construct() {
+            $this->id = 'bdm-digital';
+            $this->icon = plugin_dir_url(__FILE__) . 'assets/img/pix-logo.png'; 
+            $this->has_fields = true;
+            $this->method_title = 'BDM Digital Payment Gateway (PIX)';
+            $this->method_description = 'Process payments using PIX through BDM Digital.';
+    
+            $this->supports = array('products');
+    
             $this->init_form_fields();
-
             $this->init_settings();
-
-            $this->title = $this->get_option( 'title' );
-            $this->description = $this->get_option( 'description' );
-            $this->enabled = $this->get_option( 'enabled' );
-            $this->testmode = 'yes' === $this->get_option( 'testmode' );
-            $this->api_key = $this->get_option( 'api_key' );
-            // $this->publishable_key = $this->testmode ? $this->get_option( 'test_publishable_key' ) : $this->get_option( 'publishable_key' );
-        
-            // This action hook saves the settings
-            add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-        
-            // We need custom JavaScript to obtain a token
-            add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
-            
-            // You can also register a webhook here
-            // add_action( 'woocommerce_api_{webhook name}', array( $this, 'webhook' ) );
- 		}
-
-		/**
- 		 * Plugin options, we deal with it in Step 3 too
- 		 */
- 		public function init_form_fields(){
+    
+            $this->title = $this->get_option('title');
+            $this->description = $this->get_option('description');
+            $this->enabled = $this->get_option('enabled');
+            $this->api_key = $this->get_option('api_key');
+            $this->pix_endpoint = $this->get_option('pix_endpoint');
+    
+            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+            add_action('woocommerce_api_' . strtolower(get_class($this)), array($this, 'handle_webhook'));
+        }
+    
+        public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array(
                     'title'       => 'Enable',
-                    'label'       => 'Enable paymets with BDM Digital',
+                    'label'       => 'Enable payments with BDM Digital PIX',
                     'type'        => 'checkbox',
-                    'description' => '',
                     'default'     => 'no'
                 ),
                 'title' => array(
                     'title'       => 'Title',
                     'type'        => 'text',
-                    'description' => 'This controls the title which the user sees during checkout.',
-                    'default'     => 'BDM Digital',
-                    'desc_tip'    => true,
+                    'default'     => 'PIX via BDM Digital'
                 ),
                 'description' => array(
                     'title'       => 'Description',
                     'type'        => 'textarea',
-                    // 'description' => 'This controls the description which the user sees during checkout.',
-                    'default'     => 'Pague com BDM Digital',
-                ),
-                'testmode' => array(
-                    'title'       => 'Sandbox',
-                    'label'       => 'Sandbox',
-                    'type'        => 'checkbox',
-                    // 'description' => 'Place the payment gateway in test mode using test API keys.',
-                    'default'     => 'yes',
-                    'desc_tip'    => true,
+                    'default'     => 'Pague usando PIX.'
                 ),
                 'api_key' => array(
                     'title'       => 'API Key',
                     'type'        => 'text'
                 ),
-                // 'test_private_key' => array(
-                //     'title'       => 'Test Private Key',
-                //     'type'        => 'password',
-                // ),
-                // 'publishable_key' => array(
-                //     'title'       => 'Live Publishable Key',
-                //     'type'        => 'text'
-                // ),
-                // 'private_key' => array(
-                //     'title'       => 'Live Private Key',
-                //     'type'        => 'password'
-                // )
+                'pix_endpoint' => array(
+                    'title'       => 'PIX API Endpoint',
+                    'type'        => 'url',
+                    'default'     => 'https://api.bdm-digital.com/pix'
+                )
             );
-	 	}
-
-		/**
-		 * You will need it if you want your custom credit card form, Step 4 is about it
-		 */
-		public function payment_fields() {
-
-				 
-		}
-
-		/*
-		 * Custom CSS and JS, in most cases required only when you decided to go with a custom credit card form
-		 */
-	 	public function payment_scripts() {
-
-	
-	 	}
-
-		/*
- 		 * Fields validation, more in Step 5
-		 */
-		public function validate_fields() {
-
-
-		}
-
-		/*
-		 * We're processing the payments here, everything about it is in Step 5
-		 */
-		public function process_payment( $order_id ) {
-
-					
-	 	}
-
-		/*
-		 * In case you need a webhook, like PayPal IPN etc
-		 */
-		public function webhook() {
-
-					
-	 	}
- 	}
+        }
+    
+        public function payment_fields() {
+            echo '<p>' . esc_html($this->description) . '</p>';
+        }
+    
+        public function process_payment($order_id) {
+            $order = wc_get_order($order_id);
+            $pix_qr_code = $this->generate_pix_qr_code($order);
+    
+            if (!$pix_qr_code) {
+                wc_add_notice(__('Erro ao gerar o QR Code do PIX.', 'bdm-digital-payment-gateway'), 'error');
+                return;
+            }
+    
+            $order->update_status('pending', __('Aguardando pagamento via PIX.', 'bdm-digital-payment-gateway'));
+    
+            return array(
+                'result'   => 'success',
+                'redirect' => $pix_qr_code
+            );
+        }
+    
+        private function generate_pix_qr_code($order) {
+            $api_key = $this->api_key;
+            $endpoint = $this->pix_endpoint;
+    
+            $payload = array(
+                'order_id'   => $order->get_id(),
+                'amount'     => $order->get_total(),
+                'currency'   => get_woocommerce_currency(),
+                'customer_email' => $order->get_billing_email(),
+            );
+    
+            $response = wp_remote_post($endpoint, array(
+                'method'    => 'POST',
+                'body'      => json_encode($payload),
+                'headers'   => array(
+                    'Content-Type'  => 'application/json',
+                    'Authorization' => 'Bearer ' . $api_key
+                )
+            ));
+    
+            if (is_wp_error($response)) {
+                return false;
+            }
+    
+            $body = json_decode(wp_remote_retrieve_body($response), true);
+    
+            return $body['qr_code_url'] ?? false;
+        }
+    
+        public function handle_webhook() {
+            $raw_body = file_get_contents('php://input');
+            $data = json_decode($raw_body, true);
+    
+            if (!isset($data['order_id']) || !isset($data['status'])) {
+                wp_send_json_error('Invalid webhook payload', 400);
+                return;
+            }
+    
+            $order = wc_get_order($data['order_id']);
+            if (!$order) {
+                wp_send_json_error('Order not found', 404);
+                return;
+            }
+    
+            if ($data['status'] === 'paid') {
+                $order->payment_complete();
+                $order->add_order_note(__('Pagamento confirmado via PIX.', 'bdm-digital-payment-gateway'));
+                wp_send_json_success('Payment updated');
+            } else {
+                $order->update_status('failed', __('Pagamento PIX falhou.', 'bdm-digital-payment-gateway'));
+                wp_send_json_error('Payment failed');
+            }
+        }
+    }
+    
 }
