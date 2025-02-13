@@ -29,19 +29,37 @@ function bdm_install_classic_editor() {
     }
 
     // Checa o classic editor e dispara erro se não houver e caso haja, ativa.
-    if (!is_plugin_active('classic-editor/classic-editor.php')) {
-        include_once(ABSPATH . 'wp-admin/includes/plugin.php');
-        if (!is_plugin_installed('classic-editor/classic-editor.php')) {
-            deactivate_plugins(plugin_basename(__FILE__));
-            wp_die(
-                __('BDM Digital Payment Gateway requer que o Classic Editor esteja instalado e ativado.', 'bdm-digital-payment-gateway'),
-                __('Plugin Activation Error', 'bdm-digital-payment-gateway'),
-                ['back_link' => true]
-            );
-        } else {
-            activate_plugin('classic-editor/classic-editor.php');
-        }
+    $classic_editor_plugin = 'classic-editor/classic-editor.php';
+
+    if (!file_exists(WP_PLUGIN_DIR . '/' . $classic_editor_plugin)) {
+        include_once ABSPATH . 'wp-admin/includes/plugin.php';
+        include_once ABSPATH . 'wp-admin/includes/file.php';
+        include_once ABSPATH . 'wp-admin/includes/misc.php';
+        include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        
+        $upgrader = new Plugin_Upgrader();
+        $upgrader->install('https://downloads.wordpress.org/plugin/classic-editor.latest-stable.zip');
     }
+
+    if (!is_plugin_active($classic_editor_plugin)) {
+        activate_plugin($classic_editor_plugin);
+    }
+
+    // Checa se o storefront existe
+
+    $theme = 'storefront';
+
+    // Check if Storefront is installed
+    if (wp_get_theme($theme)->exists()) {
+        switch_theme($theme);
+    } else {
+        // Storefront is not installed, show admin notice
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-warning is-dismissible">
+                <p>' . __('O tema Storefront não está instalado. Para um funcionamento ideal do BDM Digital Payment Gateway, instale e ative o tema Storefront.', 'bdm-digital-payment-gateway') . '</p>
+            </div>';
+        });
+    }    
 
     bdm_create_checkout_page();
 }
@@ -139,7 +157,6 @@ function init_gateway_class() {
             $this->api_key = $this->get_option('api_key') === 'AwXs58ExCGKzK7coV2lw5RqMgETNpg+wplLcKeOPQOR7NhOzEfn/5ca1fGE+6kMw';
             $this->partner_email = $this->get_option('partner_email') === 'wesley.andrade@dourado.tech';
             $this->sandbox = $this->get_option('sandbox') === 'yes';
-            $this->enabled = $this->get_option('enabled') === 'yes';
         
             $this->endpoint = $this->sandbox
                 ? 'https://sandbox-api.example.com/'
@@ -160,7 +177,7 @@ function init_gateway_class() {
                 'title' => array(
                     'title' => __('Title', 'woocommerce'),
                     'type' => 'text',
-                    'default' => $this->title,
+                    'default' => $this->method_title,
                 ),   
                 'method_description' => array(
                     'title' => __('Description', 'woocommerce'),
