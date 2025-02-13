@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     git \
     nano \
     libpng-dev \
+    libxml2-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
     libzip-dev \
@@ -18,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     && docker-php-ext-configure gd \
-    && docker-php-ext-install gd zip \
+    && docker-php-ext-install gd zip soap \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer globally inside the container
@@ -52,6 +53,7 @@ COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-
 # Copying Woocommerce to container
 COPY ./woocommerce /var/www/html/wp-content/plugins/woocommerce
 COPY ./storefront /var/www/html/wp-content/themes/storefront
+COPY ./classic-editor /var/www/html/wp-content/plugins/classic-editor
 
 # Set the working directory to the plugin directory
 WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
@@ -70,7 +72,6 @@ RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
 RUN chmod -R 777 /var/www/html/wp-content/plugins && \
     ls -lah /var/www/html/wp-content/plugins && \
     rm -rf /var/www/html/wp-content/plugins/hello.php /var/www/html/wp-content/plugins/hello-dolly /var/www/html/wp-content/plugins/akismet
-
     
 # Copy the .env file into the container
 COPY .env /var/www/.env

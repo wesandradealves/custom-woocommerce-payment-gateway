@@ -6,8 +6,8 @@
 
 wp_head();
 
-?>
+the_content();
 
-<div id="bdm-checkout-root"></div>
+?>
 
 <?php wp_footer(); ?>
