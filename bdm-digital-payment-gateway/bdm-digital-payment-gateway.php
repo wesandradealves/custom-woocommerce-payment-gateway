@@ -39,9 +39,7 @@ function bdm_install_classic_editor() {
         
         $upgrader = new Plugin_Upgrader();
         $upgrader->install('https://downloads.wordpress.org/plugin/classic-editor.latest-stable.zip');
-    }
-
-    if (!is_plugin_active($classic_editor_plugin)) {
+    } elseif (!is_plugin_active($classic_editor_plugin)) {
         activate_plugin($classic_editor_plugin);
     }
 
@@ -49,11 +47,9 @@ function bdm_install_classic_editor() {
 
     $theme = 'storefront';
 
-    // Check if Storefront is installed
     if (wp_get_theme($theme)->exists()) {
         switch_theme($theme);
     } else {
-        // Storefront is not installed, show admin notice
         add_action('admin_notices', function () {
             echo '<div class="notice notice-warning is-dismissible">
                 <p>' . __('O tema Storefront não está instalado. Para um funcionamento ideal do BDM Digital Payment Gateway, instale e ative o tema Storefront.', 'bdm-digital-payment-gateway') . '</p>
@@ -127,10 +123,180 @@ function bdm_load_custom_template($template) {
 
 // Adiciona o plugin como gateway de pagamento
 
-add_filter( 'woocommerce_payment_gateways', 'misha_add_gateway_class' );
-function misha_add_gateway_class( $gateways ) {
+add_filter( 'woocommerce_payment_gateways', 'add_gateway' );
+function add_gateway( $gateways ) {
 	$gateways[] = 'WC_BDM_GATEWAY'; // your class name is here
 	return $gateways;
+}
+
+// Adiciona scripts
+
+function bdm_enqueue_scripts() {
+    // Ensure WooCommerce is active
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    // Load scripts only on checkout page
+    if (is_checkout() || is_page('bdm-checkout')) {
+        wp_enqueue_style(
+            'bdm-checkout-style',
+            plugin_dir_url(__FILE__) . 'assets/css/style.css',
+            array(), // Dependencies (if any)
+            '1.0.0', // Version
+            'all' // Media type
+        );
+
+        wp_enqueue_style(
+            'bootstrap',
+            'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css',
+            array(), // Dependencies (if any)
+            '1.0.0', // Version
+            'all' // Media type
+        );        
+
+        wp_enqueue_script(
+            'bdm-checkout-js',
+            plugin_dir_url(__FILE__) . 'assets/js/main.js',
+            array('jquery'),
+            filemtime(plugin_dir_path(__FILE__) . 'assets/js/main.js'),
+            true
+        );
+
+        wp_enqueue_script(
+            'toast-js',
+            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js',
+            array('jquery'),
+            filemtime('//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js'),
+            true
+        );
+
+        wp_enqueue_style(
+            'toast-css',
+            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css',
+            array(), // Dependencies (if any)
+            '1.0.0', // Version
+            'all' // Media type
+        );        
+
+        $settings = get_option('woocommerce_bdm-digital_settings'); 
+
+        $checkout_data = array(
+            'products' => array_map(function($item) {
+                return array(
+                    'id' => $item['product_id'],
+                    'title' => $item['data']->get_name(),
+                    'quantity' => $item['quantity'],
+                    'price' => wc_price($item['line_total'])
+                );
+            }, WC()->cart->get_cart()),
+            'settings' => array(
+                'api_key' => isset($settings['api_key']) ? $settings['api_key'] : '',
+                'endpoint' => $settings['sandbox']
+                ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
+                : 'https://api.example.com/',
+                'asset' => isset($settings['asset']) ? $settings['asset'] : '',
+                'partner_email' => isset($settings['partner_email']) ? $settings['partner_email'] : '',
+                'sandbox' => isset($settings['sandbox']) ? $settings['sandbox'] : 'yes',
+                'consumer_key' => isset($settings['rest_key']) ? $settings['rest_key'] : '',
+                'consumer_secret' => isset($settings['rest_secret']) ? $settings['rest_secret'] : ''
+            )
+        );
+
+        wp_localize_script('bdm-checkout-js', 'bdm_checkout_data', $checkout_data);
+    }
+}
+add_action('wp_enqueue_scripts', 'bdm_enqueue_scripts');
+
+// Registra venda
+
+function my_custom_update_order_status() {
+    register_rest_route('store/v1', '/update-payment/', array(
+        'methods'  => 'POST',
+        'callback' => 'my_handle_order_payment_update',
+        'permission_callback' => '__return_true' // 🚀 Public API (no auth required)
+    ));
+}
+
+add_action('rest_api_init', 'my_custom_update_order_status');
+
+function my_handle_order_payment_update(WP_REST_Request $request) {
+    $secret_key = $request->get_param('consumer_secret'); // Change this to your own key
+
+    $order_id     = $request->get_param('order_id');
+    $payment_status = $request->get_param('status');
+    $request_key  = $request->get_param('consumer_key');
+
+    // if ($request_key !== $secret_key) {
+    //     return new WP_REST_Response(array('error' => 'Unauthorized'), 403);
+    // }
+
+    $order = wc_get_order($order_id);
+    if (!$order) {
+        return new WP_REST_Response(array('error' => 'Invalid order ID'), 400);
+    }
+
+    $allowed_statuses = array('pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed');
+
+    if (!in_array($payment_status, $allowed_statuses)) {
+        return new WP_REST_Response(array('error' => 'Invalid status'), 400);
+    }
+
+    $order->update_status($payment_status, 'Updated via API');
+    return new WP_REST_Response(array(
+        'message' => 'Order status updated successfully',
+        'order_id' => $order_id,
+        'new_status' => $payment_status
+    ), 200);
+}
+
+add_action('wp_ajax_create_bdm_order', 'create_bdm_order');
+add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); // For non-logged-in users (optional)
+
+function create_bdm_order() {
+    // Check if the request contains all necessary parameters
+    if (!isset($_POST['billing_code'], $_POST['amount'], $_POST['partner_email'], $_POST['products'])) {
+        wp_send_json_error(['message' => 'Missing required parameters.']);
+    }
+
+    $billing_code = sanitize_text_field($_POST['billing_code']);
+    $amount = floatval($_POST['amount']);
+    $partner_email = sanitize_email($_POST['partner_email']);
+    $products = $_POST['products']; // Assuming this is an array of product info
+
+    // Create the order
+    $order = wc_create_order();
+
+    // Add products to the order (you may need to map the products to existing WooCommerce product IDs)
+    foreach ($products as $product_data) {
+        // Example: Assuming 'id' and 'quantity' exist in your product data
+        $product_id = $product_data['id']; // Replace with actual mapping
+        $quantity = $product_data['quantity'];
+
+        $product = wc_get_product($product_id);
+        if ($product) {
+            $order->add_product($product, $quantity);
+        }
+    }
+
+    // Add custom billing information
+    $order->set_billing_email($partner_email);
+    $order->set_billing_address_1('Custom Address'); // Customize with real data
+    $order->set_billing_city('Custom City');
+    $order->set_billing_postcode('00000'); // Customize with real data
+    // Add other billing fields as necessary
+
+    // Set the order total (including payment)
+    $order->set_total($amount);
+
+    // Add custom meta for the billing code
+    $order->update_meta_data('_billing_code', $billing_code);
+
+    // Save the order
+    $order->save();
+
+    // Return success
+    wp_send_json_success(['order_id' => $order->get_id()]);
 }
 
 // Classe do gateway
@@ -143,6 +309,9 @@ function init_gateway_class() {
         private $endpoint;
         private $partner_email;
         private $sandbox;
+        private $asset;
+        private $rest_key;
+        private $rest_secret;
 
         public function __construct() {
             $this->id = 'bdm-digital';
@@ -157,10 +326,13 @@ function init_gateway_class() {
             $this->api_key = $this->get_option('api_key') === 'AwXs58ExCGKzK7coV2lw5RqMgETNpg+wplLcKeOPQOR7NhOzEfn/5ca1fGE+6kMw';
             $this->partner_email = $this->get_option('partner_email') === 'wesley.andrade@dourado.tech';
             $this->sandbox = $this->get_option('sandbox') === 'yes';
+            $this->asset = $this->get_option('asset') === 'BDM';
+            $this->rest_key = $this->get_option('rest_key') === 'ck_3e5bb37ed71eb20d4071722b9c26a171131a29f9';
+            $this->rest_secret = $this->get_option('rest_secret') === 'cs_3deba108ca46008b9a07a0f918b03ca9b7b90ee6';
         
             $this->endpoint = $this->sandbox
-                ? 'https://sandbox-api.example.com/'
-                : 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/ecommerce-partner/clients/';
+                ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
+                : 'https://api.example.com/';
         
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         }
@@ -172,7 +344,7 @@ function init_gateway_class() {
                     'title' => __('Enable/Disable', 'woocommerce'),
                     'type' => 'checkbox',
                     'label' => __('Enable BDM PIX Payment', 'woocommerce'),
-                    'default' => 'yes'
+                    'default' => ''
                 ),
                 'title' => array(
                     'title' => __('Title', 'woocommerce'),
@@ -188,36 +360,54 @@ function init_gateway_class() {
                     'title' => __('API Key', 'woocommerce'),
                     'type' => 'text',
                     'description' => __('Enter your API Key', 'woocommerce'),
-                    'default' => 'AwXs58ExCGKzK7coV2lw5RqMgETNpg+wplLcKeOPQOR7NhOzEfn/5ca1fGE+6kMw',
+                    'default' => $this->get_option('api_key') ?? '',
                 ),
                 'partner_email' => array(
                     'title' => __('Partner Email', 'woocommerce'),
                     'type' => 'text',
                     'description' => __('Enter your partner email', 'woocommerce'),
-                    'default' => '',
+                    'default' => $this->get_option('partner_email') ?? '',
                 ),
+                'asset' => array(
+                    'title' => __('Asset', 'woocommerce'),
+                    'type' => 'text',
+                    'default' => $this->get_option('asset') ?? ''
+                ),  
                 'sandbox' => array(
                     'title' => __('Sandbox Mode', 'woocommerce'),
                     'type' => 'checkbox',
                     'label' => __('Enable Sandbox Mode', 'woocommerce'),
-                    'default' => 'yes',
+                    'default' => $this->get_option('sandbox') ?? '',
                     'description' => __('Use the sandbox API endpoint for testing.', 'woocommerce'),
-                )
+                ),  
+                'rest_key' => array(
+                    'title' => __('Rest API Key', 'woocommerce'),
+                    'type' => 'text',
+                    'label' => __('Rest API Key', 'woocommerce'),
+                    'default' => $this->get_option('rest_key') ?? ''
+                ),  
+                'rest_secret' => array(
+                    'title' => __('Rest API Secret', 'woocommerce'),
+                    'type' => 'text',
+                    'label' => __('Rest API Secret', 'woocommerce'),
+                    'default' => $this->get_option('rest_secret') ?? ''
+                ), 
             );
         }
 
         // Processa o pagamento
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
+
             $payload = array(
                 'partnerEmail' => $this->partner_email,
                 'amount' => (float) $order->get_total(),
-                'toAsset' => 'BRL',
+                'toAsset' => $this->partner_email,
                 'attachment' => '',
-                'fromAsset' => 'BRL'
+                'fromAsset' => $this->partner_email
             );
 
-            $response = wp_remote_post($this->endpoint . 'v33/ecommerce-partner/billing-code', array(
+            $response = wp_remote_post($this->endpoint . '/ecommerce-partner/billing-code', array(
                 'method'    => 'POST',
                 'body'      => json_encode($payload),
                 'headers'   => array(
