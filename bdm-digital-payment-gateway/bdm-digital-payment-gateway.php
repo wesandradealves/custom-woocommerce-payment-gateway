@@ -163,6 +163,22 @@ function bdm_enqueue_scripts() {
             true
         );
 
+        wp_enqueue_script(
+            'toast-js',
+            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js',
+            array('jquery'),
+            filemtime('//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js'),
+            true
+        );
+
+        wp_enqueue_style(
+            'toast-css',
+            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css',
+            array(), // Dependencies (if any)
+            '1.0.0', // Version
+            'all' // Media type
+        );        
+
         $settings = get_option('woocommerce_bdm-digital_settings'); 
 
         $checkout_data = array(

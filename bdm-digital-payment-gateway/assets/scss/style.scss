@@ -2,6 +2,11 @@
 @import "../../node_modules/bootstrap/scss/bootstrap";
 @import "../../node_modules/animate.css/animate.min.css";
 
+:root {
+    --primary: #BA7301;
+    --secondary: #0303020D;
+}
+
 // Modern SCSS Reset
 
 // Universal box-sizing for all elements
@@ -128,13 +133,118 @@ body, html {
             color: rgba(0, 0, 0, 0.6);
             @include toRem(font-size, 20)
         }
-    }        
-    p {
-        color: rgba(0, 0, 0, 0.6);
-        font-weight: 400;
-        @include toRem(font-size, 14)
-    }       
+    }     
+
+    #bdm-checkout-container {
+        @include toRem(font-size, 16);
+
+        p {
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: 400;
+            font-size: inherit;
+        }     
+
+        li>ul,li>ol,
+        ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }  
+
+        p {
+            font-size: inherit;
+        }
+        
+        .cart {
+            &-header {
+                font-weight: bold;
+                p {
+                    font-weight: inherit;
+                }
+            }
+        }
+
+        #step-1 {
+            #disclaimer {
+                border: 3px solid rgba(0, 0, 0, 0.06);
+                border-radius: 9px;   
+                @include toRem(font-size, 16);
+                p {
+                    font-size: inherit;
+                    line-height: 1.2;
+                    small {
+                        @include toRem(font-size, 14);
+                    }
+                }     
+            }
+        }
+
+        #step-2 {
+            #billingcode {
+                max-width: 197px;
+                text-transform: uppercase;
+                @include toRem(font-size, 17);
+                line-height: 1.3;
+            }
+            #qrcode {
+                position: relative;
+                svg {
+                    position: absolute;
+                    width: 276px;
+                    height: auto;
+                    background: rgba(0, 0, 0, .2);                    
+                }
+            }
+            #expiration {
+                padding: 8px 30px;
+                border-radius: 6px;
+                background-color: var(--secondary);
+            }
+        }
+
+        .cotation-block {
+            > span {
+                @include toRem(font-size, 18);
+                font-weight: 600;
+                &:last-of-type {
+                    @include toRem(font-size, 14);
+                    font-weight: 300;
+                }
+            }
+            
+            small {
+                font-size: inherit;
+            }
+        }
+
+        #step-3 {
+            .cotation-block {
+                padding: 8px 30px;
+                border-radius: 6px;
+                background-color: var(--secondary);
+            }
+        }
+        
+        .btn {
+            &[disabled] {
+                pointer-events: none;
+                opacity: .2;
+            }
+            border: 0;
+            border-radius: 999px;
+            padding: 8px 24px;
+            text-align: center;
+            color: white;
+            text-transform: uppercase;
+            @include toRem(font-size, 18);
+            &-primary {
+                background-color: var(--primary);
+            }
+        }
+    }    
 }
+
+
 
 .loading {
     position: fixed;
