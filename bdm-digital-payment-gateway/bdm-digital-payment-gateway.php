@@ -194,7 +194,7 @@ function bdm_enqueue_scripts() {
                 'api_key' => isset($settings['api_key']) ? $settings['api_key'] : '',
                 'endpoint' => $settings['sandbox']
                 ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
-                : 'https://api.example.com/',
+                : 'https://partner.dourado.cash/',
                 'asset' => isset($settings['asset']) ? $settings['asset'] : '',
                 'partner_email' => isset($settings['partner_email']) ? $settings['partner_email'] : '',
                 'sandbox' => isset($settings['sandbox']) ? $settings['sandbox'] : 'yes',
