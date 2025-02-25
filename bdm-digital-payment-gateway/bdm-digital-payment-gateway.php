@@ -12,13 +12,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Checagem dos plugins necessários como Woocommerce e Classic Editor
-
 register_activation_hook(__FILE__, 'bdm_install_classic_editor');
 function bdm_install_classic_editor() {
-    // Checa o woocommerce e dispara erro se não houver e caso haja, ativa.
     if (!is_plugin_active('woocommerce/woocommerce.php')) {
         deactivate_plugins(plugin_basename(__FILE__));
+
         wp_die(
             __('BDM Digital Payment Gateway requer que o WooCommerce esteja instalado e ativado.', 'bdm-digital-payment-gateway'),
             __('Plugin Activation Error', 'bdm-digital-payment-gateway'),
@@ -26,41 +24,9 @@ function bdm_install_classic_editor() {
         );
     } else {
         activate_plugin('woocommerce/woocommerce.php');
+        bdm_create_checkout_page();
     }
-
-    // Checa o classic editor e dispara erro se não houver e caso haja, ativa.
-    $classic_editor_plugin = 'classic-editor/classic-editor.php';
-
-    if (!file_exists(WP_PLUGIN_DIR . '/' . $classic_editor_plugin)) {
-        include_once ABSPATH . 'wp-admin/includes/plugin.php';
-        include_once ABSPATH . 'wp-admin/includes/file.php';
-        include_once ABSPATH . 'wp-admin/includes/misc.php';
-        include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-        
-        $upgrader = new Plugin_Upgrader();
-        $upgrader->install('https://downloads.wordpress.org/plugin/classic-editor.latest-stable.zip');
-    } elseif (!is_plugin_active($classic_editor_plugin)) {
-        activate_plugin($classic_editor_plugin);
-    }
-
-    // Checa se o storefront existe
-
-    $theme = 'storefront';
-
-    if (wp_get_theme($theme)->exists()) {
-        switch_theme($theme);
-    } else {
-        add_action('admin_notices', function () {
-            echo '<div class="notice notice-warning is-dismissible">
-                <p>' . __('O tema Storefront não está instalado. Para um funcionamento ideal do BDM Digital Payment Gateway, instale e ative o tema Storefront.', 'bdm-digital-payment-gateway') . '</p>
-            </div>';
-        });
-    }    
-
-    bdm_create_checkout_page();
 }
-
-// Cria uma página checkout personalizada com a correção para o checkout sem blocos como conteúdo ao habilitar o plugin
 
 function bdm_create_checkout_page() {
     $page = array(
@@ -80,8 +46,6 @@ function bdm_create_checkout_page() {
     }
 }
 
-// Deleta a página criada ao desabilitar o plugin
-
 register_deactivation_hook(__FILE__, 'bdm_remove_checkout_page');
 function bdm_remove_checkout_page() {
     $page = get_page_by_path('bdm-checkout');
@@ -89,8 +53,6 @@ function bdm_remove_checkout_page() {
         wp_delete_post($page->ID, true);
     }
 }
-
-// Insere URL para a página de configuração na listagem de plugins
 
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'bdm_add_settings_link');
 function bdm_add_settings_link($links) {
@@ -100,15 +62,11 @@ function bdm_add_settings_link($links) {
     return $links;
 }
 
-// Registra o template customizado para a página criada
-
 add_filter('theme_page_templates', 'bdm_register_custom_template');
 function bdm_register_custom_template($templates) {
     $templates['bdm-checkout-template.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
     return $templates;
 }
-
-// Inclui o template customizado para a checkout criada
 
 add_filter('template_include', 'bdm_load_custom_template');
 function bdm_load_custom_template($template) {
@@ -121,38 +79,32 @@ function bdm_load_custom_template($template) {
     return $template;
 }
 
-// Adiciona o plugin como gateway de pagamento
-
 add_filter( 'woocommerce_payment_gateways', 'add_gateway' );
 function add_gateway( $gateways ) {
-	$gateways[] = 'WC_BDM_GATEWAY'; // your class name is here
+	$gateways[] = 'WC_BDM_GATEWAY'; 
 	return $gateways;
 }
 
-// Adiciona scripts
-
 function bdm_enqueue_scripts() {
-    // Ensure WooCommerce is active
     if (!class_exists('WooCommerce')) {
         return;
     }
 
-    // Load scripts only on checkout page
     if (is_checkout() || is_page('bdm-checkout')) {
         wp_enqueue_style(
             'bdm-checkout-style',
             plugin_dir_url(__FILE__) . 'assets/css/style.css',
-            array(), // Dependencies (if any)
-            '1.0.0', // Version
-            'all' // Media type
+            array(),
+            '1.0.0', 
+            'all' 
         );
 
         wp_enqueue_style(
             'bootstrap',
             'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css',
-            array(), // Dependencies (if any)
-            '1.0.0', // Version
-            'all' // Media type
+            array(), 
+            '1.0.0',
+            'all' 
         );        
 
         wp_enqueue_script(
@@ -174,9 +126,9 @@ function bdm_enqueue_scripts() {
         wp_enqueue_style(
             'toast-css',
             '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css',
-            array(), // Dependencies (if any)
-            '1.0.0', // Version
-            'all' // Media type
+            array(),
+            '1.0.0', 
+            'all' 
         );        
 
         $settings = get_option('woocommerce_bdm-digital_settings'); 
@@ -208,28 +160,22 @@ function bdm_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'bdm_enqueue_scripts');
 
-// Registra venda
-
 function my_custom_update_order_status() {
     register_rest_route('store/v1', '/update-payment/', array(
         'methods'  => 'POST',
         'callback' => 'my_handle_order_payment_update',
-        'permission_callback' => '__return_true' // 🚀 Public API (no auth required)
+        'permission_callback' => '__return_true' 
     ));
 }
 
 add_action('rest_api_init', 'my_custom_update_order_status');
 
 function my_handle_order_payment_update(WP_REST_Request $request) {
-    $secret_key = $request->get_param('consumer_secret'); // Change this to your own key
+    $secret_key = $request->get_param('consumer_secret');
 
     $order_id     = $request->get_param('order_id');
     $payment_status = $request->get_param('status');
     $request_key  = $request->get_param('consumer_key');
-
-    // if ($request_key !== $secret_key) {
-    //     return new WP_REST_Response(array('error' => 'Unauthorized'), 403);
-    // }
 
     $order = wc_get_order($order_id);
     if (!$order) {
@@ -254,7 +200,6 @@ add_action('wp_ajax_create_bdm_order', 'create_bdm_order');
 add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); // For non-logged-in users (optional)
 
 function create_bdm_order() {
-    // Check if the request contains all necessary parameters
     if (!isset($_POST['billing_code'], $_POST['amount'], $_POST['partner_email'], $_POST['products'])) {
         wp_send_json_error(['message' => 'Missing required parameters.']);
     }
@@ -262,15 +207,12 @@ function create_bdm_order() {
     $billing_code = sanitize_text_field($_POST['billing_code']);
     $amount = floatval($_POST['amount']);
     $partner_email = sanitize_email($_POST['partner_email']);
-    $products = $_POST['products']; // Assuming this is an array of product info
+    $products = $_POST['products']; 
 
-    // Create the order
     $order = wc_create_order();
 
-    // Add products to the order (you may need to map the products to existing WooCommerce product IDs)
     foreach ($products as $product_data) {
-        // Example: Assuming 'id' and 'quantity' exist in your product data
-        $product_id = $product_data['id']; // Replace with actual mapping
+        $product_id = $product_data['id'];
         $quantity = $product_data['quantity'];
 
         $product = wc_get_product($product_id);
@@ -279,32 +221,23 @@ function create_bdm_order() {
         }
     }
 
-    // Add custom billing information
     $order->set_billing_email($partner_email);
-    $order->set_billing_address_1('Custom Address'); // Customize with real data
-    $order->set_billing_city('Custom City');
-    $order->set_billing_postcode('00000'); // Customize with real data
-    // Add other billing fields as necessary
+    $order->set_billing_address_1('');
+    $order->set_billing_city('');
+    $order->set_billing_postcode(''); 
 
-    // Set the order total (including payment)
     $order->set_total($amount);
 
-    // Add custom meta for the billing code
     $order->update_meta_data('_billing_code', $billing_code);
 
-    // Save the order
     $order->save();
 
-    // Return success
     wp_send_json_success(['order_id' => $order->get_id()]);
 }
-
-// Classe do gateway
 
 add_action('plugins_loaded', 'init_gateway_class');
 function init_gateway_class() {
     class WC_BDM_GATEWAY extends WC_Payment_Gateway {
-        // Declarações
         private $api_key;
         private $endpoint;
         private $partner_email;
@@ -337,7 +270,6 @@ function init_gateway_class() {
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         }
 
-        // Inicia os campos de configuração
         public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array(
@@ -395,44 +327,43 @@ function init_gateway_class() {
             );
         }
 
-        // Processa o pagamento
-        public function process_payment($order_id) {
-            $order = wc_get_order($order_id);
+        // public function process_payment($order_id) {
+        //     $order = wc_get_order($order_id);
 
-            $payload = array(
-                'partnerEmail' => $this->partner_email,
-                'amount' => (float) $order->get_total(),
-                'toAsset' => $this->partner_email,
-                'attachment' => '',
-                'fromAsset' => $this->partner_email
-            );
+        //     $payload = array(
+        //         'partnerEmail' => $this->partner_email,
+        //         'amount' => (float) $order->get_total(),
+        //         'toAsset' => $this->partner_email,
+        //         'attachment' => '',
+        //         'fromAsset' => $this->partner_email
+        //     );
 
-            $response = wp_remote_post($this->endpoint . '/ecommerce-partner/billing-code', array(
-                'method'    => 'POST',
-                'body'      => json_encode($payload),
-                'headers'   => array(
-                    'Content-Type'  => 'application/json',
-                    'x-api-key'     => $this->api_key
-                ),
-                'timeout'   => 60,
-            ));
+        //     $response = wp_remote_post($this->endpoint . '/ecommerce-partner/billing-code', array(
+        //         'method'    => 'POST',
+        //         'body'      => json_encode($payload),
+        //         'headers'   => array(
+        //             'Content-Type'  => 'application/json',
+        //             'x-api-key'     => $this->api_key
+        //         ),
+        //         'timeout'   => 60,
+        //     ));
 
-            if (is_wp_error($response)) {
-                wc_add_notice(__('Payment error: ', 'woocommerce') . $response->get_error_message(), 'error');
-                return;
-            }
+        //     if (is_wp_error($response)) {
+        //         wc_add_notice(__('Payment error: ', 'woocommerce') . $response->get_error_message(), 'error');
+        //         return;
+        //     }
 
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-            if (isset($body['QrCode'])) {
-                $order->update_status('on-hold', __('Awaiting PIX payment.', 'woocommerce'));
-                return array(
-                    'result'   => 'success',
-                    'redirect' => $this->get_return_url($order)
-                );
-            }
+        //     $body = json_decode(wp_remote_retrieve_body($response), true);
+        //     if (isset($body['QrCode'])) {
+        //         $order->update_status('on-hold', __('Awaiting PIX payment.', 'woocommerce'));
+        //         return array(
+        //             'result'   => 'success',
+        //             'redirect' => $this->get_return_url($order)
+        //         );
+        //     }
             
-            wc_add_notice(__('Payment failed.', 'woocommerce'), 'error');
-            return;
-        }
+        //     wc_add_notice(__('Payment failed.', 'woocommerce'), 'error');
+        //     return;
+        // }
     }
 }

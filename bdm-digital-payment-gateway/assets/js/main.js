@@ -16,7 +16,6 @@
             return;
         }
 
-        /** Countdown Timer **/
         const countdown = (minutes) => {
             let seconds = 59;
             let mins = minutes;
@@ -41,36 +40,26 @@
             tick();
         };
 
-        /**
-         * Format cart data to ensure prices are numeric and clean.
-         * @param {Object} products - The products to format.
-         * @returns {Object} - The formatted products.
-         */
         const formatCart = (array) => {
-            // Function to decode HTML entities
             const decodeHtml = (html) => {
                 const textarea = document.createElement("textarea");
                 textarea.innerHTML = html;
                 return textarea.value;
             };
 
-            // Function to extract numeric values (including floats)
             const extractNumericPrice = (price) => {
-                // Decode HTML entities & remove HTML tags
                 let cleanedPrice = decodeHtml(price).replace(/<[^>]*>/g, "").trim();
 
-                // Replace comma with dot (for float handling)
                 cleanedPrice = cleanedPrice.replace(",", ".");
 
-                // Extract only numbers and a single decimal point
-                let match = cleanedPrice.match(/[\d.]+/g); // Extract numbers & dots
-                return match ? match.join("") : "0"; // Join to ensure valid format
+                let match = cleanedPrice.match(/[\d.]+/g);
+                return match ? match.join("") : "0"; 
             };
 
             let newCart = Object.entries(array).reduce((acc, [key, item]) => {
                 acc[key] = {
                     ...item,
-                    price: parseFloat(extractNumericPrice(item.price)) // Convert price properly
+                    price: parseFloat(extractNumericPrice(item.price)) 
                 };
                 return acc;
             }, {});
@@ -78,7 +67,6 @@
             return newCart;
         };        
 
-        /** Updates WooCommerce Order Status **/
         const updateOrderStatus = async (orderId, status) => {
             try {
                 const response = await fetch("/wp-json/store/v1/update-payment", {
@@ -86,13 +74,12 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ order_id: orderId, status: status.toLowerCase(), consumer_key: settings.consumer_key, consumer_secret: settings.consumer_secret })
                 });
-                console.log(`Order ${orderId} updated successfully.`, await response.json());
+                console.log(`✅ Order ${orderId} updated successfully.`, await response.json());
             } catch (error) {
                 console.error("Error updating order status:", error);
             }
         };
 
-        /** Fetches Payment Status **/
         const checkPaymentStatus = async () => {
             try {
                 // `https://partner.dourado.cash/ecommerce-partner/clients/billingcode-status/celsoj@gmail.com/BDM_DIGITAL_339e947d-933a-49b2-8b61-6e429c355b99_17a9`
@@ -103,7 +90,6 @@
                     headers: { "x-api-key": API_KEY }
                 });
                 const data = await response.json();
-                console.log(data);
 
                 if (data.status === "COMPLETED") {
                     console.log("✅ Payment completed!");
@@ -112,11 +98,9 @@
                     clearInterval(paymentCheckInterval);
                 }
             } catch (error) {
-                console.error("Error fetching payment status:", error);
             }
         };
 
-        /** Creates WooCommerce Order **/
         const createWooCommerceOrder = (amount) => {
             $.post("/wp-admin/admin-ajax.php", {
                 action: "create_bdm_order",
@@ -126,7 +110,7 @@
                 products
             }).done((response) => {
                 if (response.success) {
-                    console.log("WooCommerce order created successfully!", response);
+                    console.log("✅ WooCommerce order created successfully!");
                     localStorage.setItem("order_id", response.data.order_id);
                     countdown(1);
                     setTimeout(() => {
@@ -139,7 +123,6 @@
             }).fail((err) => console.error("Error creating WooCommerce order:", err));
         };
 
-        /** Handles Checkout Button Click **/
         $("#bdm-checkout-button").on("click", async function (e) {
             e.preventDefault();
 
@@ -179,7 +162,6 @@
             }
         });
 
-        /** Copy Billing Code to Clipboard **/
         $("#bdm-copycode").on("click", async function (e) {
             e.preventDefault();
             try {
