@@ -40,19 +40,21 @@ else
   echo "Banco de dados já contém tabelas. Pulando importação."
 fi
 
-# Atualizar URLs do WordPress se necessário
-if command -v wp >/dev/null 2>&1; then
-  if [ -n "$SITE_URL" ]; then
-    CURRENT_URL=$(wp option get siteurl --allow-root)
-    if [ "$CURRENT_URL" != "$SITE_URL" ]; then
-      echo "Atualizando URLs do WordPress de $CURRENT_URL para $SITE_URL..."
-      wp search-replace "$CURRENT_URL" "$SITE_URL" --all-tables --allow-root
-    else
-      echo "SITE_URL já está correto: $CURRENT_URL"
-    fi
+# Atualizar URLs do WordPress se SITE_URL estiver definido e for diferente do atual
+if [ -n "$SITE_URL" ]; then
+  CURRENT_SITEURL=$(wp option get siteurl --allow-root)
+  CURRENT_HOME=$(wp option get home --allow-root)
+
+  echo "Site URL atual no banco:"
+  echo "siteurl = $CURRENT_SITEURL"
+  echo "home    = $CURRENT_HOME"
+
+  if [ "$CURRENT_SITEURL" != "$SITE_URL" ] || [ "$CURRENT_HOME" != "$SITE_URL" ]; then
+    echo "Atualizando URLs do WordPress para $SITE_URL..."
+    wp search-replace "$CURRENT_SITEURL" "$SITE_URL" --all-tables --precise --allow-root
   else
-    echo "Variável SITE_URL não definida. Pulando search-replace."
+    echo "SITE_URL já está correto: $CURRENT_SITEURL"
   fi
 else
-  echo "WP-CLI não encontrado. Ignorando atualização de URLs."
+  echo "Variável SITE_URL não definida. Pulando search-replace."
 fi
