@@ -117,7 +117,7 @@ COPY ./init-db.sh /usr/local/bin/init-db.sh
 RUN dos2unix /usr/local/bin/init-db.sh && chmod +x /usr/local/bin/init-db.sh
 
 # Copia o arquivo Apache customizado para dentro do container
-COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
+# COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 
 # Ativa o mod_rewrite para URLs amigáveis no WordPress
 RUN a2enmod rewrite
