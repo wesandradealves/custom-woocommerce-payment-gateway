@@ -51,15 +51,17 @@ until mysqladmin ping -h"${WORDPRESS_DB_HOST}" --silent; do
   sleep 5
 done
 
+# Executa script de importação e atualização do banco
+if [ -f /usr/local/bin/init-db.sh ]; then
+  echo "Executando init-db.sh..."
+  /bin/bash /usr/local/bin/init-db.sh
+else
+  echo "init-db.sh não encontrado."
+fi
+
 # Verifica se o WordPress está instalado
 if ! wp core is-installed --allow-root; then
-    echo "WordPress ainda não está instalado."
-
-    # Executa script de inicialização customizado, se existir
-    if [ -f /usr/local/bin/init-db.sh ]; then
-        echo "Executando init-db.sh..."
-        /bin/bash /usr/local/bin/init-db.sh
-    fi
+    echo "WordPress ainda não está instalado. Você pode instalar via WP-CLI ou pela interface web."
 else
     echo "WordPress já instalado, pulando instalação."
 fi
