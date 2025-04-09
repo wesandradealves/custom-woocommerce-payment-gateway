@@ -18,14 +18,37 @@ sed -i "s/localhost/${WORDPRESS_DB_HOST}/" /var/www/html/wp-config.php
 
 CONFIG_FILE="/var/www/html/wp-config.php"
 
-# Adicionar as definições apenas se ainda não existirem
-if ! grep -q "JWT_AUTH_SECRET_KEY" "$CONFIG_FILE"; then
-    echo "" >> "$CONFIG_FILE"
-    echo "// JWT Auth Config" >> "$CONFIG_FILE"
-    echo "define('JWT_AUTH_SECRET_KEY', '$(openssl rand -base64 64)');" >> "$CONFIG_FILE"
-    echo "define('JWT_AUTH_CORS_ENABLE', true);" >> "$CONFIG_FILE"
-    echo "define('FS_METHOD', 'direct');" >> "$CONFIG_FILE"
+WPCONFIG="/var/www/html/wp-config.php"
+
+# Garante que o arquivo existe
+if [ ! -f "$WPCONFIG" ]; then
+  echo "Erro: $WPCONFIG não encontrado!"
+  exit 1
 fi
+
+# Função para adicionar uma linha ao wp-config.php se ainda não existir
+add_config_line() {
+  local key="$1"
+  local value="$2"
+  if ! grep -q "$key" "$WPCONFIG"; then
+    echo "Adicionando $key ao wp-config.php"
+    echo "define('$key', $value);" >> "$WPCONFIG"
+  else
+    echo "$key já existe, pulando..."
+  fi
+}
+
+# Adicionar JWT_AUTH_SECRET_KEY com valor aleatório se não existir
+if ! grep -q "JWT_AUTH_SECRET_KEY" "$WPCONFIG"; then
+  SECRET_KEY=$(openssl rand -base64 64)
+  echo "define('JWT_AUTH_SECRET_KEY', '$SECRET_KEY');" >> "$WPCONFIG"
+else
+  echo "JWT_AUTH_SECRET_KEY já existe, pulando..."
+fi
+
+# Outras configurações
+add_config_line "JWT_AUTH_CORS_ENABLE" "true"
+add_config_line "FS_METHOD" "'direct'"
 
 # Aguarda o banco estar pronto
 echo "Aguardando banco de dados..."
