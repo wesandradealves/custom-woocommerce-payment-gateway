@@ -44,6 +44,9 @@ COPY composer.json /var/www/html/composer.json
 # Ajustar permissões
 RUN chmod 664 /var/www/html/composer.json
 
+# Baixar WordPress antes de instalar dependências PHP
+RUN wp core download --allow-root --path=/var/www/html --version=6.4 --locale=pt_BR
+
 # Instalar dependências via Composer
 RUN composer require vlucas/phpdotenv && \
     composer config --no-plugins allow-plugins.* true && \
