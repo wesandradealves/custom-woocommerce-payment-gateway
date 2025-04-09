@@ -53,9 +53,7 @@ RUN composer config --no-plugins allow-plugins.* true
 RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer true
 
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
-# RUN composer install
-# RUN composer install --no-dev --optimize-autoloader
-RUN rm composer.lock && composer install --no-dev --optimize-autoloader
+RUN if [ -f composer.lock ]; then rm composer.lock; fi && composer install --no-dev --optimize-autoloader
 
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
