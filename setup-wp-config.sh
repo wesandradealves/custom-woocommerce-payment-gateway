@@ -16,10 +16,16 @@ sed -i "s/username_here/${WORDPRESS_DB_USER}/" /var/www/html/wp-config.php
 sed -i "s/password_here/${WORDPRESS_DB_PASSWORD}/" /var/www/html/wp-config.php
 sed -i "s/localhost/${WORDPRESS_DB_HOST}/" /var/www/html/wp-config.php
 
-# Adicionar configurações ao wp-config.php
-echo "define('JWT_AUTH_SECRET_KEY', '$(openssl rand -base64 64)');" >> /var/www/html/wp-config.php
-echo "define('JWT_AUTH_CORS_ENABLE', true);" >> /var/www/html/wp-config.php
-echo "define('FS_METHOD', 'direct');" >> /var/www/html/wp-config.php
+CONFIG_FILE="/var/www/html/wp-config.php"
+
+# Adicionar as definições apenas se ainda não existirem
+if ! grep -q "JWT_AUTH_SECRET_KEY" "$CONFIG_FILE"; then
+    echo "" >> "$CONFIG_FILE"
+    echo "// JWT Auth Config" >> "$CONFIG_FILE"
+    echo "define('JWT_AUTH_SECRET_KEY', '$(openssl rand -base64 64)');" >> "$CONFIG_FILE"
+    echo "define('JWT_AUTH_CORS_ENABLE', true);" >> "$CONFIG_FILE"
+    echo "define('FS_METHOD', 'direct');" >> "$CONFIG_FILE"
+fi
 
 # Aguarda o banco estar pronto
 echo "Aguardando banco de dados..."
@@ -48,5 +54,5 @@ if ! wp core is-installed --allow-root; then
     #wp search-replace "$(wp option get siteurl --allow-root)" "${SITE_URL}" --all-tables --allow-root 
 fi
 
-# Iniciar o servidor Apache
-exec apache2-foreground
+# Inicializa o Apache
+exec docker-entrypoint.sh apache2-foreground
