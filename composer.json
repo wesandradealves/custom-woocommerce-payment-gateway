@@ -1,10 +1,11 @@
 {
     "name": "wordpress/wordpress",
     "description": "WordPress with Composer",
+    "version": "v6.7.2",
     "type": "project",
     "require": {
         "php": "^8.2",
-        "johnpbloch/wordpress": "*",
+        "johnpbloch/wordpress": "^6.7",
         "wpackagist-plugin/woocommerce": "*"
     },
     "repositories": [
@@ -19,19 +20,21 @@
         "allow-plugins": {
             "composer/installers": true,
             "johnpbloch/wordpress-core-installer": true
-        },        
+        },
         "preferred-install": "dist",
         "optimize-autoloader": true
     },
     "extra": {
         "wordpress-install-dir": "/var/www/html",
         "installer-paths": {
-            "/var/www/html/wp-content/plugins/{$name}/": ["type:wordpress-plugin"]
+            "/var/www/html/wp-content/plugins/{$name}/": [
+                "type:wordpress-plugin"
+            ]
         }
     },
     "scripts": {
         "post-install-cmd": [
-            "wp core update-db"
+            "wp core update-db --allow-root"
         ]
     }
 }
