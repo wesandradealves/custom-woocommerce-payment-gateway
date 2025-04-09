@@ -9,14 +9,17 @@ define('DB_COLLATE', '');
 
 $table_prefix = 'wp_';
 
-define('JWT_AUTH_SECRET_KEY', '$(openssl rand -base64 64)');
+// JWT e configurações adicionais
+define('JWT_AUTH_SECRET_KEY', getenv('JWT_AUTH_SECRET_KEY'));
 define('JWT_AUTH_CORS_ENABLE', true);
 define('FS_METHOD', 'direct');
-define('WP_DEBUG', false);
+
+define('WP_DEBUG', getenv('WP_DEBUG') === 'true');
 define('WP_MEMORY_LIMIT', '256M');
 define('WP_MAX_MEMORY_LIMIT', '512M');
 
 if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', __DIR__ . '/' );
+    define( 'ABSPATH', __DIR__ . '/' );
 }
+
 require_once ABSPATH . 'wp-settings.php';

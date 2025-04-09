@@ -37,9 +37,8 @@ insert_define "JWT_AUTH_CORS_ENABLE" "true"
 insert_define "FS_METHOD" "'direct'"
 
 # Gerar JWT_AUTH_SECRET_KEY se não existir
-if ! grep -q "JWT_AUTH_SECRET_KEY" "$WPCONFIG"; then
-  SECRET_KEY=$(openssl rand -base64 64)
-  insert_define "JWT_AUTH_SECRET_KEY" "'$SECRET_KEY'"
+if [ -z "$JWT_AUTH_SECRET_KEY" ]; then
+  export JWT_AUTH_SECRET_KEY=$(openssl rand -base64 64)
 else
   echo "JWT_AUTH_SECRET_KEY já existe, pulando..."
 fi
