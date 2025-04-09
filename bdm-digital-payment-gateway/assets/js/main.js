@@ -232,13 +232,29 @@
 
         copyPaymentCode: function () {
             const code = $("#billingcode").text();
-
-            navigator.clipboard.writeText(code)
-                .then(() => Toast.success("Code copied to clipboard."))
-                .catch((err) => {
-                    Toast.error("Failed to copy code.");
+        
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code)
+                    .then(() => Toast.success("Código copiado com sucesso!"))
+                    .catch((err) => {
+                        Toast.error("Erro ao copiar o código.");
+                        console.error(err);
+                    });
+            } else {
+                // Fallback
+                const tempInput = document.createElement("input");
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand("copy");
+                    Toast.success("Código copiado com sucesso!");
+                } catch (err) {
+                    Toast.error("Erro ao copiar o código.");
                     console.error(err);
-                });
+                }
+                document.body.removeChild(tempInput);
+            }
         },
     };
 
