@@ -1,81 +1,72 @@
 #!/bin/bash
 
 # Carregar variáveis do arquivo .env, se existir
-if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+if [ -f /var/www/.env ]; then
+    export $(grep -v '^#' /var/www/.env | xargs)
 fi
-
-# Certifique-se de que o wp-config.php existe
-if [ ! -f /var/www/html/wp-config.php ]; then
-    cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
-fi
-
-# Substituir placeholders no wp-config.php com variáveis de ambiente
-sed -i "s/database_name_here/${WORDPRESS_DB_NAME}/" /var/www/html/wp-config.php
-sed -i "s/username_here/${WORDPRESS_DB_USER}/" /var/www/html/wp-config.php
-sed -i "s/password_here/${WORDPRESS_DB_PASSWORD}/" /var/www/html/wp-config.php
-sed -i "s/localhost/${WORDPRESS_DB_HOST}/" /var/www/html/wp-config.php
-
-CONFIG_FILE="/var/www/html/wp-config.php"
 
 WPCONFIG="/var/www/html/wp-config.php"
+WPCONFIG_TEMPLATE="/var/www/html/wp-config-template.php"
 
-# Garante que o arquivo existe
+# Certifique-se de que o wp-config.php existe
 if [ ! -f "$WPCONFIG" ]; then
-  echo "Erro: $WPCONFIG não encontrado!"
-  exit 1
+    echo "Criando wp-config.php a partir do template..."
+    cp "$WPCONFIG_TEMPLATE" "$WPCONFIG"
 fi
 
-# Função para adicionar uma linha ao wp-config.php se ainda não existir
-add_config_line() {
+# Função para adicionar define() antes do comentário final
+insert_define() {
   local key="$1"
   local value="$2"
-  if ! grep -q "$key" "$WPCONFIG"; then
-    echo "Adicionando $key ao wp-config.php"
-    echo "define('$key', $value);" >> "$WPCONFIG"
+  if ! grep -q "define('$key'," "$WPCONFIG"; then
+    echo "Adicionando define('$key', $value) ao wp-config.php"
+    sed -i "/^\/\* That's all, stop editing! Happy publishing. \*\//i define('$key', $value);" "$WPCONFIG"
   else
-    echo "$key já existe, pulando..."
+    echo "$key já existe em wp-config.php, pulando..."
   fi
 }
 
-# Adicionar JWT_AUTH_SECRET_KEY com valor aleatório se não existir
+# Adicionar constantes básicas de banco de dados
+insert_define "DB_NAME" "'${WORDPRESS_DB_NAME}'"
+insert_define "DB_USER" "'${WORDPRESS_DB_USER}'"
+insert_define "DB_PASSWORD" "'${WORDPRESS_DB_PASSWORD}'"
+insert_define "DB_HOST" "'${WORDPRESS_DB_HOST}'"
+
+# Adicionar variáveis úteis
+insert_define "JWT_AUTH_CORS_ENABLE" "true"
+insert_define "FS_METHOD" "'direct'"
+
+# Gerar JWT_AUTH_SECRET_KEY se não existir
 if ! grep -q "JWT_AUTH_SECRET_KEY" "$WPCONFIG"; then
   SECRET_KEY=$(openssl rand -base64 64)
-  echo "define('JWT_AUTH_SECRET_KEY', '$SECRET_KEY');" >> "$WPCONFIG"
+  insert_define "JWT_AUTH_SECRET_KEY" "'$SECRET_KEY'"
 else
   echo "JWT_AUTH_SECRET_KEY já existe, pulando..."
 fi
 
-# Outras configurações
-add_config_line "JWT_AUTH_CORS_ENABLE" "true"
-add_config_line "FS_METHOD" "'direct'"
-
-# Aguarda o banco estar pronto
-echo "Aguardando banco de dados..."
+# Aguardar banco de dados estar disponível
+echo "Aguardando banco de dados em ${WORDPRESS_DB_HOST}..."
 until mysqladmin ping -h"${WORDPRESS_DB_HOST}" --silent; do
   echo "Esperando o banco de dados..."
   sleep 5
 done
 
-# Verifica se o WordPress já está instalado
+# Verifica se o WordPress está instalado
 if ! wp core is-installed --allow-root; then
-    # echo "Instalando WordPress..."
-    # wp core install \
-    #--url="${SITE_URL}" \
-    #--title="Meu Site WP" \
-    #--admin_user="${WORDPRESS_USER}" \
-    #--admin_password="${WORDPRESS_PWD}" \
-    #--admin_email="admin@example.com" \
-    #--skip-email \
-    #--allow-root 
+    echo "WordPress ainda não está instalado."
+
+    # Executa script de inicialização customizado, se existir
     if [ -f /usr/local/bin/init-db.sh ]; then
         echo "Executando init-db.sh..."
         /bin/bash /usr/local/bin/init-db.sh
     fi
-    # else
-    #echo "Atualizando URLs do WordPress para ${SITE_URL}..."
-    #wp search-replace "$(wp option get siteurl --allow-root)" "${SITE_URL}" --all-tables --allow-root 
+else
+    echo "WordPress já instalado, pulando instalação."
 fi
+
+# Garantir permissões apropriadas
+chown www-data:www-data "$WPCONFIG"
+chmod 664 "$WPCONFIG"
 
 # Inicializa o Apache
 exec docker-entrypoint.sh apache2-foreground
