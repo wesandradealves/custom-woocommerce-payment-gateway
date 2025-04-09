@@ -11,7 +11,7 @@ get_header();  // Standard for WordPress templates
 <section id="bdm-checkout-container" class="container mb-4 p-0">
     <ul class="steps d-flex flex-column p-0 m-0">
         <!-- Step 1: Checkout -->
-        <li data-section="checkout" id="step-1">
+        <li data-section="checkout" id="step-1" class="d-flex flex-column">
             <h2 class="mb-4"><?php esc_html_e( 'Pedido', 'bdm-checkout' ); ?></h2>
 
             <?php

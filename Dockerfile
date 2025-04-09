@@ -1,3 +1,4 @@
+# filepath: c:\Users\wesan\www\plugin-wordpress\Dockerfile
 # Use the WordPress base image with PHP 8.2
 FROM wordpress:php8.2-apache
 
@@ -38,6 +39,12 @@ WORKDIR /var/www/html
 # Copy composer.json into the container
 COPY composer.json /var/www/html/composer.json
 
+# Ajustar permissões para o arquivo composer.json
+RUN chmod 664 /var/www/html/composer.json 
+
+# Install dotenv via Composer
+RUN composer require vlucas/phpdotenv
+
 # Allow all plugins to be used
 RUN composer config --no-plugins allow-plugins.* true
 
@@ -45,7 +52,9 @@ RUN composer config --no-plugins allow-plugins.* true
 RUN composer config --global allow-plugins.johnpbloch/wordpress-core-installer true
 
 # Install WordPress via Composer (this will install WordPress in the container's wp-content)
-RUN composer install
+# RUN composer install
+# RUN composer install --no-dev --optimize-autoloader
+RUN rm composer.lock && composer install --no-dev --optimize-autoloader
 
 # Copy the custom plugin into the WordPress plugins directory inside the container
 COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
@@ -72,15 +81,37 @@ RUN chown -R www-data:www-data /var/www/html/wp-content/plugins && \
 RUN chmod -R 777 /var/www/html/wp-content/plugins && \
     ls -lah /var/www/html/wp-content/plugins && \
     rm -rf /var/www/html/wp-content/plugins/hello.php /var/www/html/wp-content/plugins/hello-dolly /var/www/html/wp-content/plugins/akismet
-    
+
 # Copy the .env file into the container
 COPY .env /var/www/.env
 
 # Remove default WordPress files from the image
 RUN rm -rf /var/www/html/wordpress
 
+# Ensure the uploads directory exists and is writable
+RUN mkdir -p /var/www/html/wp-content/uploads && \
+    chown -R www-data:www-data /var/www/html/wp-content/uploads && \
+    chmod -R 775 /var/www/html/wp-content/uploads
+
 RUN composer update
+
+# Copy the script to the container
+COPY ./setup-wp-config.sh /usr/local/bin/setup-wp-config.sh
+
+# Ensure the script has Unix line endings
+RUN apt-get update && apt-get install -y dos2unix && dos2unix /usr/local/bin/setup-wp-config.sh
+
+# Ensure the script is executable
+RUN chmod +x /usr/local/bin/setup-wp-config.sh
+
+# Set the script as the ENTRYPOINT
+ENTRYPOINT ["/usr/local/bin/setup-wp-config.sh"]
+
+# Copiar o script de inicialização para o contêiner
+COPY ./init-db.sh /usr/local/bin/init-db.sh
+
+# Tornar o script executável
+RUN chmod +x /usr/local/bin/init-db.sh
 
 # Expose port 80
 EXPOSE 80
-

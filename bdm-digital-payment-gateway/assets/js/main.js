@@ -1,46 +1,91 @@
-(function ($) {
-    $(window).on("load", function () {
-        localStorage.removeItem("order_id");
-        localStorage.removeItem("billingcode");
+(function ($, window, document) {
+    const BDM = {
+        config: {
+            checkInterval: 15000,
+        },
 
-        const settings = bdm_checkout_data?.settings;
-        const products = bdm_checkout_data?.products;
-        const API_KEY = settings?.api_key;
-        const ENDPOINT = settings?.endpoint;
-        const COTATION = 10;
-        const CHECK_INTERVAL = 15000;
-        let paymentCheckInterval;
+        state: {
+            cotation: null,
+            settings: null,
+            products: null,
+            intervalId: null,
+        },
 
-        if (!settings || !products) {
-            console.error("bdm_checkout_data is not available!");
-            return;
-        }
-
-        const countdown = (minutes) => {
-            let seconds = 59;
-            let mins = minutes;
-            const tick = () => {
-                const counter = document.getElementById("counter");
-                if (!counter) return;
-                const currentMinutes = mins - 1;
-                counter.innerHTML = `${currentMinutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-                seconds--;
-                if (seconds > 0) {
-                    setTimeout(tick, 1000);
-                } else if (mins > minutes) {
-                    countdown(mins - 1);
-                } else {
-                    $("#expiration").toggleClass('d-none d-block');
-                    $.toast({ heading: 'Tempo expirou',  hideAfter: false, text: 'O tempo para pagar expirou, atualize a página e tente novamente.', icon: 'error' }),
-                    $('#bdm-copycode').prop('disabled', true),
-                    $("#qrcode svg").toggleClass("d-none d-block"),
-                    clearInterval(paymentCheckInterval);
+        getCotation: async function () {
+            const { asset, endpoint_quotation } = this.state.settings;
+            try {
+                const endpointQuotation = `${endpoint_quotation}/${asset}`;
+                if (!endpointQuotation) {
+                    console.warn("[BDM Checkout] Endpoint Quotation is not defined.");
+                    return this.config.fallbackCotation;
                 }
-            };
-            tick();
-        };
+        
+                const response = await fetch(endpointQuotation);
+                const data = await response.json();
+                return data?.BRL;
+            } catch (error) {
+                console.warn("[BDM Checkout] Error fetching cotation:", error);
+                return this.config.fallbackCotation;
+            }
+        },
 
-        const formatCart = (array) => {
+        init: async function () {
+            this.state.settings = bdm_checkout_data?.settings;
+            this.state.products = bdm_checkout_data?.products;
+
+            if (!this.state.settings || !this.state.products) {
+                console.error("[BDM Checkout] Missing configuration data.");
+                return;
+            }
+
+            this.state.cotation = await this.getCotation();
+            this.clearLocalStorage();
+            this.bindEvents();
+        },
+
+        clearLocalStorage: function () {
+            localStorage.removeItem("order_id");
+            localStorage.removeItem("billingcode");
+        },
+
+        bindEvents: function () {
+            $("#bdm-checkout-button").on("click", async (e) => {
+                e.preventDefault();
+                await this.handleCheckout();
+            });
+
+            $("#bdm-copycode").on("click", (e) => {
+                e.preventDefault();
+                this.copyPaymentCode();
+            });
+        },
+
+        handleCheckout: async function () {
+            const totalPrice = this.calculateTotalPrice(this.state.products);
+            const amount = parseFloat((20 / 14.27).toFixed(6)); 
+
+            UI.updateCheckoutUIBefore(totalPrice, amount);
+
+            try {
+                const billingData = await this.requestBillingCode(amount);
+                if (billingData?.billingCode) {
+                    this.updateUIAfterBillingCode(billingData);
+                    this.createWooCommerceOrder(amount);
+                } else {
+                    Toast.error("Failed to generate payment code.");
+                }
+            } catch (error) {
+                console.error("[BDM Checkout] Error during checkout:", error);
+                Toast.error("Error processing checkout.");
+            }
+        },
+
+        calculateTotalPrice: function (products) {
+            const formattedCart = this.formatCart(products);
+            return Object.values(formattedCart).reduce((sum, item) => sum + item.price, 0);
+        },
+
+        formatCart: function (array) {
             const decodeHtml = (html) => {
                 const textarea = document.createElement("textarea");
                 textarea.innerHTML = html;
@@ -49,127 +94,172 @@
 
             const extractNumericPrice = (price) => {
                 let cleanedPrice = decodeHtml(price).replace(/<[^>]*>/g, "").trim();
-
                 cleanedPrice = cleanedPrice.replace(",", ".");
-
-                let match = cleanedPrice.match(/[\d.]+/g);
-                return match ? match.join("") : "0"; 
+                const match = cleanedPrice.match(/[\d.]+/g);
+                return match ? parseFloat(match.join("")) : 0;
             };
 
-            let newCart = Object.entries(array).reduce((acc, [key, item]) => {
+            return Object.entries(array).reduce((acc, [key, item]) => {
                 acc[key] = {
                     ...item,
-                    price: parseFloat(extractNumericPrice(item.price)) 
+                    price: extractNumericPrice(item.price),
                 };
                 return acc;
             }, {});
+        },
 
-            return newCart;
-        };        
+        requestBillingCode: async function (amount) {
+            const { endpoint, api_key, partner_email, asset } = this.state.settings;
 
-        const updateOrderStatus = async (orderId, status) => {
-            try {
-                const response = await fetch("/wp-json/store/v1/update-payment", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ order_id: orderId, status: status.toLowerCase(), consumer_key: settings.consumer_key, consumer_secret: settings.consumer_secret })
-                });
-                console.log(`✅ Order ${orderId} updated successfully.`, await response.json());
-            } catch (error) {
-                console.error("Error updating order status:", error);
-            }
-        };
+            const response = await fetch(`${endpoint}ecommerce-partner/billing-code`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-api-key": api_key },
+                body: JSON.stringify({
+                    partnerEmail: partner_email,
+                    amount: amount,
+                    toAsset: asset,
+                    attachment: "Teste",
+                    fromAsset: asset,
+                }),
+            });
 
-        const checkPaymentStatus = async () => {
-            try {
-                // `https://partner.dourado.cash/ecommerce-partner/clients/billingcode-status/celsoj@gmail.com/BDM_DIGITAL_339e947d-933a-49b2-8b61-6e429c355b99_17a9`
-                // `${settings.endpoint}ecommerce-partner/clients/billingcode-status/${settings.partner_email}/${billingcode}`
-                                
-                const response = await fetch(`${settings.endpoint}ecommerce-partner/clients/billingcode-status/${settings.partner_email}/${localStorage.getItem("billingcode")}`, {
-                    method: "GET",
-                    headers: { "x-api-key": API_KEY }
-                });
-                const data = await response.json();
+            return response.json();
+        },
 
-                if (data.status === "COMPLETED") {
-                    console.log("✅ Payment completed!");
-                    updateOrderStatus(localStorage.getItem("order_id"), data.status);
-                    $("#step-2, #step-3").toggleClass("d-none d-flex");
-                    clearInterval(paymentCheckInterval);
-                }
-            } catch (error) {
-            }
-        };
+        updateUIAfterBillingCode: function (data) {
+            UI.hideLoading();
+            $("#step-1, #step-2").toggleClass("d-flex d-none");
+            UI.setHTML("#billingcode", data.billingCode);
+            $("#qrcode").html(`<img src="${data.qrCode}" alt="QR Code" />`);
+            localStorage.setItem("billingcode", data.billingCode);
+        },
 
-        const createWooCommerceOrder = (amount) => {
+        createWooCommerceOrder: function (amount) {
+            const { partner_email } = this.state.settings;
+
             $.post("/wp-admin/admin-ajax.php", {
                 action: "create_bdm_order",
                 billing_code: localStorage.getItem("billingcode"),
                 amount: amount,
-                partner_email: settings.partner_email,
-                products
-            }).done((response) => {
-                if (response.success) {
-                    console.log("✅ WooCommerce order created successfully!");
-                    localStorage.setItem("order_id", response.data.order_id);
-                    countdown(1);
-                    setTimeout(() => {
-                        checkPaymentStatus();
-                        paymentCheckInterval = setInterval(checkPaymentStatus, CHECK_INTERVAL);
-                    }, CHECK_INTERVAL);
-                } else {
-                    console.error("Error creating WooCommerce order:", response.message);
+                partner_email: partner_email,
+                products: this.state.products,
+            })
+                .done((response) => {
+                    if (response.success) {
+                        console.log("✅ WooCommerce order created successfully!");
+                        localStorage.setItem("order_id", response.data.order_id);
+                        this.startCountdown(1);
+                        this.startStatusInterval();
+                    } else {
+                        console.error("Error creating WooCommerce order:", response.message);
+                    }
+                })
+                .fail((err) => {
+                    console.error("Error creating WooCommerce order:", err);
+                });
+        },
+
+        startCountdown: function (minutes) {
+            let totalSeconds = minutes * 60;
+            const counter = document.getElementById("counter");
+
+            const interval = setInterval(() => {
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+                counter.innerHTML = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+                totalSeconds--;
+
+                if (totalSeconds < 0) {
+                    clearInterval(interval);
+                    this.onCountdownFinished();
                 }
-            }).fail((err) => console.error("Error creating WooCommerce order:", err));
-        };
+            }, 1000);
+        },
 
-        $("#bdm-checkout-button").on("click", async function (e) {
-            e.preventDefault();
+        onCountdownFinished: function () {
+            Toast.warning("Payment time expired!");
+            $("#step-2, #step-3").addClass("d-none");
+            $("#step-1").removeClass("d-none");
+            this.clearLocalStorage();
+        },
 
-            const totalPrice = Object.values(formatCart(products)).reduce((sum, item) => sum + item.price, 0);
-            const amount = totalPrice/COTATION;
+        startStatusInterval: function () {
+            if (this.state.intervalId) clearInterval(this.state.intervalId);
+            this.state.intervalId = setInterval(this.checkPaymentStatus.bind(this), this.config.checkInterval);
+        },
 
-            $(".amount-bdm").html(amount);
-            $(".amount").html(totalPrice);
-            $(".cotation").html(COTATION);
-            $(".loading").toggleClass("d-none d-flex");
+        checkPaymentStatus: async function () {
+            const { endpoint, api_key, partner_email } = this.state.settings;
+            const billingcode = localStorage.getItem("billingcode");
 
             try {
-                const response = await fetch(`${ENDPOINT}ecommerce-partner/billing-code`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-                    body: JSON.stringify({
-                        partnerEmail: settings.partner_email,
-                        amount: amount,
-                        toAsset: settings.asset,
-                        attachment: "Teste",
-                        fromAsset: settings.asset
-                    })
-                });
+                const response = await fetch(
+                    `${endpoint}ecommerce-partner/clients/billingcode-status/${partner_email}/${billingcode}`,
+                    {
+                        method: "GET",
+                        headers: { "x-api-key": api_key },
+                    }
+                );
+
                 const data = await response.json();
-                if (data?.billingCode) {
-                    $(".loading").toggleClass("d-none d-flex");
-                    $("#step-1, #step-2").toggleClass("d-flex d-none");
-                    $("#billingcode").html(data.billingCode);
-                    $("#qrcode").append(`<img src="${data.qrCode}" />`);
-                    localStorage.setItem("billingcode", data.billingCode);
-                    createWooCommerceOrder(amount);
-                } else {
-                    console.error("Payment request failed:", data);
+
+                if (data?.status === "COMPLETED") {
+                    clearInterval(this.state.intervalId);
+                    Toast.success("Payment confirmed!");
+                    this.updateOrderStatus(localStorage.getItem("order_id"), data.status);
                 }
             } catch (error) {
-                console.error("Error during payment request:", error);
+                console.warn("[BDM Checkout] Error checking payment status:", error);
             }
-        });
+        },
 
-        $("#bdm-copycode").on("click", async function (e) {
-            e.preventDefault();
+        updateOrderStatus: async function (orderId, status) {
             try {
-                await navigator.clipboard.writeText($("#billingcode").text());
-                $.toast({ heading: 'Copiado!', text: 'Código copiado com sucesso.', icon: 'success' });
-            } catch (err) {
-                $.toast({ heading: 'Erro', text: 'Falha ao copiar código.', icon: 'error' });
+                await fetch("/wp-json/store/v1/update-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        status: status.toLowerCase(),
+                        consumer_key: this.state.settings.consumer_key,
+                        consumer_secret: this.state.settings.consumer_secret,
+                    }),
+                });
+            } catch (error) {
+                console.error("[BDM Checkout] Error updating order:", error);
             }
-        });
-    });
-})(jQuery);
+        },
+
+        copyPaymentCode: function () {
+            const code = $("#billingcode").text();
+
+            navigator.clipboard.writeText(code)
+                .then(() => Toast.success("Code copied to clipboard."))
+                .catch((err) => {
+                    Toast.error("Failed to copy code.");
+                    console.error(err);
+                });
+        },
+    };
+
+    // Helpers
+    const UI = {
+        showLoading: () => $(".loading").removeClass("d-none").addClass("d-flex"),
+        hideLoading: () => $(".loading").removeClass("d-flex").addClass("d-none"),
+        setHTML: (selector, value) => $(selector).html(value),
+        updateCheckoutUIBefore: (totalPrice, amount) => {
+            UI.setHTML(".amount-bdm", amount);
+            UI.setHTML(".amount", totalPrice);
+            UI.setHTML(".cotation", BDM.state.cotation);
+            UI.showLoading();
+        },
+    };
+
+    const Toast = {
+        success: (msg) => $.toast({ heading: "Success", text: msg, icon: "success", hideAfter: 4000 }),
+        error: (msg) => $.toast({ heading: "Error", text: msg, icon: "error", hideAfter: 5000 }),
+        warning: (msg) => $.toast({ heading: "Warning", text: msg, icon: "warning", hideAfter: 5000 }),
+    };
+
+    $(document).ready(() => BDM.init());
+})(jQuery, window, document);

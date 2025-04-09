@@ -151,6 +151,7 @@ function bdm_enqueue_scripts() {
                 'partner_email' => isset($settings['partner_email']) ? $settings['partner_email'] : '',
                 'sandbox' => isset($settings['sandbox']) ? $settings['sandbox'] : 'yes',
                 'consumer_key' => isset($settings['rest_key']) ? $settings['rest_key'] : '',
+                'endpoint_quotation' => isset($settings['endpoint_quotation']) ? $settings['endpoint_quotation'] : '',
                 'consumer_secret' => isset($settings['rest_secret']) ? $settings['rest_secret'] : ''
             )
         );
@@ -245,11 +246,12 @@ function init_gateway_class() {
         private $asset;
         private $rest_key;
         private $rest_secret;
+        private $cotation;
 
         public function __construct() {
             $this->id = 'bdm-digital';
-            $this->method_title = __('BDM PIX', 'woocommerce');
-            $this->method_description = __('Accept payments via BDM PIX.', 'woocommerce');
+            $this->method_title = __('BDM Digital', 'woocommerce');
+            $this->method_description = __('Accept payments via BDM Digital.', 'woocommerce');
             $this->supports = array('products');
         
             $this->init_form_fields();
@@ -262,6 +264,7 @@ function init_gateway_class() {
             $this->asset = $this->get_option('asset') === 'BDM';
             $this->rest_key = $this->get_option('rest_key') === 'ck_3e5bb37ed71eb20d4071722b9c26a171131a29f9';
             $this->rest_secret = $this->get_option('rest_secret') === 'cs_3deba108ca46008b9a07a0f918b03ca9b7b90ee6';
+            $this->endpoint_quotation = $this->get_option('endpoint_quotation') === 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/ecommerce-partner/clients/quotation/all/BDM';
         
             $this->endpoint = $this->sandbox
                 ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
@@ -275,7 +278,7 @@ function init_gateway_class() {
                 'enabled' => array(
                     'title' => __('Enable/Disable', 'woocommerce'),
                     'type' => 'checkbox',
-                    'label' => __('Enable BDM PIX Payment', 'woocommerce'),
+                    'label' => __('Enable BDM Digital Payment', 'woocommerce'),
                     'default' => ''
                 ),
                 'title' => array(
@@ -323,6 +326,12 @@ function init_gateway_class() {
                     'type' => 'text',
                     'label' => __('Rest API Secret', 'woocommerce'),
                     'default' => $this->get_option('rest_secret') ?? ''
+                ), 
+                'endpoint_quotation' => array(
+                    'title' => __('Cotation Endpoint', 'woocommerce'),
+                    'type' => 'text',
+                    'label' => __('Cotation Endpoint', 'woocommerce'),
+                    'default' => $this->get_option('endpoint_quotation') ?? ''
                 ), 
             );
         }
