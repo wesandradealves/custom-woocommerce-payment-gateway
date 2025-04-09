@@ -23,34 +23,30 @@ echo "define('FS_METHOD', 'direct');" >> /var/www/html/wp-config.php
 
 # Aguarda o banco estar pronto
 echo "Aguardando banco de dados..."
-until wp db check --allow-root; do
+until mysqladmin ping -h"${WORDPRESS_DB_HOST}" --silent; do
   echo "Esperando o banco de dados..."
   sleep 5
 done
 
-# Define a URL nova (ajuste conforme seu ambiente)
-NEW_URL="http://54.207.73.19:8000"
-
 # Verifica se o WordPress já está instalado
-if wp core is-installed --allow-root; then
-  echo "Atualizando URLs do WordPress para ${SITE_URL}..."
-  # Instalar WordPress se ainda não estiver instalado
-    if ! wp core is-installed --allow-root; then
-    echo "Instalando WordPress..."
-    wp core install \
-        --url="${SITE_URL}" \
-        --title="Meu Site WP" \
-        --admin_user="${WORDPRESS_USER}" \
-        --admin_password="${WORDPRESS_PWD}" \
-        --admin_email="admin@example.com" \
-        --skip-email \
-        --allow-root
+if ! wp core is-installed --allow-root; then
+    # echo "Instalando WordPress..."
+    # wp core install \
+    #--url="${SITE_URL}" \
+    #--title="Meu Site WP" \
+    #--admin_user="${WORDPRESS_USER}" \
+    #--admin_password="${WORDPRESS_PWD}" \
+    #--admin_email="admin@example.com" \
+    #--skip-email \
+    #--allow-root 
+    if [ -f /usr/local/bin/init-db.sh ]; then
+        echo "Executando init-db.sh..."
+        /bin/bash /usr/local/bin/init-db.sh
     fi
-  wp search-replace "$(wp option get siteurl --allow-root)" "${SITE_URL}" --all-tables --allow-root
-else
-  echo "WordPress ainda não instalado. Ignorando search-replace."
+    # else
+    #echo "Atualizando URLs do WordPress para ${SITE_URL}..."
+    #wp search-replace "$(wp option get siteurl --allow-root)" "${SITE_URL}" --all-tables --allow-root 
 fi
-
 
 # Iniciar o servidor Apache
 exec apache2-foreground

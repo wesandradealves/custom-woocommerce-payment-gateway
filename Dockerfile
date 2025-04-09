@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     ca-certificates \
     nodejs \
+    default-mysql-client \
     npm \
     && docker-php-ext-configure gd \
     && docker-php-ext-install gd zip soap \
@@ -104,14 +105,18 @@ RUN apt-get update && apt-get install -y dos2unix && dos2unix /usr/local/bin/set
 # Ensure the script is executable
 RUN chmod +x /usr/local/bin/setup-wp-config.sh
 
+# Copy the SQL file to the container
+COPY ./bdm_digital_plugin.sql /docker-entrypoint-initdb.d/bdm_digital_plugin.sql
+
+# Set proper permissions for the SQL file
+RUN chmod 644 /docker-entrypoint-initdb.d/bdm_digital_plugin.sql
+
 # Set the script as the ENTRYPOINT
 ENTRYPOINT ["/usr/local/bin/setup-wp-config.sh"]
 
 # Copiar o script de inicialização para o contêiner
 COPY ./init-db.sh /usr/local/bin/init-db.sh
-
-# Tornar o script executável
-RUN chmod +x /usr/local/bin/init-db.sh
+RUN dos2unix /usr/local/bin/init-db.sh && chmod +x /usr/local/bin/init-db.sh
 
 # Expose port 80
 EXPOSE 80
