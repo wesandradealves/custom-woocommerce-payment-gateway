@@ -14,7 +14,7 @@ define('JWT_AUTH_SECRET_KEY', getenv('JWT_AUTH_SECRET_KEY'));
 define('JWT_AUTH_CORS_ENABLE', true);
 define('FS_METHOD', 'direct');
 
-define('WP_DEBUG', getenv('WP_DEBUG') === 'true');
+define('WP_DEBUG', getenv('WP_DEBUG'));
 define('WP_MEMORY_LIMIT', '256M');
 define('WP_MAX_MEMORY_LIMIT', '512M');
 
