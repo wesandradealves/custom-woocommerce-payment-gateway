@@ -259,7 +259,7 @@ function init_gateway_class() {
         private $asset;
         private $rest_key;
         private $rest_secret;
-        private $cotation;
+        private $endpoint_quotation; // Adicione esta linha
 
         public function __construct() {
             $this->id = 'bdm-digital';

@@ -18,6 +18,8 @@ define('WP_DEBUG', getenv('WP_DEBUG'));
 define('WP_DEBUG_DISPLAY', getenv('WP_DEBUG_DISPLAY'));
 define('WP_MEMORY_LIMIT', '256M');
 define('WP_MAX_MEMORY_LIMIT', '512M');
+define('WP_DEBUG_LOG', true);
+define('WP_ALLOW_REPAIR', true);
 
 if ( ! defined( 'ABSPATH' ) ) {
     define( 'ABSPATH', __DIR__ . '/' );
