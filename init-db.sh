@@ -59,6 +59,9 @@ fi
 CURRENT_URL="http://$(wp option get home --allow-root)"
 TARGET_URL="http://54.207.73.19:8000/"
 
+echo CURRENT_URL;
+echo TARGET_URL;
+
 if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
   echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
 
