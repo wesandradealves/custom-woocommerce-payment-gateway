@@ -50,21 +50,22 @@ fi
 
 # Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir
 CURRENT_URL="http://$(wp option get home --allow-root)"
-TARGET_URL="http://54.207.73.19:8000/"
 
 echo "Domínio atual: $CURRENT_URL"
 echo "Domínio de destino: $TARGET_URL"
 echo "Env: $ENVIRONMENT"
+
+# Atualizar na tabela wp_options (siteurl e home)
+echo "Atualizando wp_options (siteurl e home)..."
+
+mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_options SET option_value = '$TARGET_URL' WHERE option_name IN ('siteurl', 'home');"
 
 if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
   echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
 
   # Executar substituição de URL através de SQL
   echo "Atualizando URLs através de SQL..."
-
-  # Substituir na tabela wp_options (siteurl e home)
-  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
-    "UPDATE wp_options SET option_value = '$TARGET_URL' WHERE option_name IN ('siteurl', 'home');"
 
   # Substituir em wp_postmeta
   mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
