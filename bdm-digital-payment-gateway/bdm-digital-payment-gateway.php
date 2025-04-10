@@ -12,6 +12,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+$storefront_theme = wp_get_theme('storefront');
+
+if ($storefront_theme->exists()) {
+    // Ativa o tema Storefront
+    switch_theme('storefront');
+} else {
+    // Exibe uma mensagem de aviso se o tema não estiver instalado
+    add_action('admin_notices', function () {
+        echo '<div class="notice notice-warning is-dismissible"><p>' .
+            __('O tema Storefront não está instalado. Por favor, instale o tema Storefront para uma melhor experiência.', 'bdm-digital-payment-gateway') .
+            '</p></div>';
+    });
+}
+
 register_activation_hook(__FILE__, 'bdm_install_classic_editor');
 function bdm_install_classic_editor() {
     if (!is_plugin_active('woocommerce/woocommerce.php')) {
@@ -26,18 +40,6 @@ function bdm_install_classic_editor() {
         activate_plugin('woocommerce/woocommerce.php');
         bdm_create_checkout_page();
         // Verifica se o tema Storefront está instalado
-        $storefront_theme = wp_get_theme('storefront');
-        if ($storefront_theme->exists()) {
-            // Ativa o tema Storefront
-            switch_theme('storefront');
-        } else {
-            // Exibe uma mensagem de aviso se o tema não estiver instalado
-            add_action('admin_notices', function () {
-                echo '<div class="notice notice-warning is-dismissible"><p>' .
-                    __('O tema Storefront não está instalado. Por favor, instale o tema Storefront para uma melhor experiência.', 'bdm-digital-payment-gateway') .
-                    '</p></div>';
-            });
-        }
     }
 }
 
