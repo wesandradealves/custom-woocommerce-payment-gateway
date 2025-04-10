@@ -1,7 +1,7 @@
-# Use the WordPress base image with PHP 8.2
+# Base image
 FROM wordpress:php8.2-apache
 
-# Criar diretório padrão e ajustar permissões
+# Criar diretório e ajustar permissões
 RUN mkdir -p /var/www/html && chown -R www-data:www-data /var/www/html
 
 # Instalar dependências do sistema e extensões PHP
@@ -20,85 +20,76 @@ RUN apt-get update && apt-get install -y \
     default-mysql-client \
     npm \
     dos2unix \
-    && docker-php-ext-configure gd \
-    && docker-php-ext-install gd zip soap \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV COMPOSER_ROOT_VERSION=6.7.2
+  && docker-php-ext-configure gd \
+  && docker-php-ext-install gd zip soap \
+  && rm -rf /var/lib/apt/lists/*
 
 # Composer
+ENV COMPOSER_ROOT_VERSION=6.7.2
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # WP-CLI
 RUN curl -sS https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
 
-# Remover arquivos padrão
+# Remover arquivos padrão do WordPress
 RUN rm -rf /var/www/html/*
 
+# WordPress install location
 WORKDIR /var/www/html
 
-# Copiar arquivos Composer
-COPY composer.json /var/www/html/composer.json
-
-# Ajustar permissões
-RUN chmod 664 /var/www/html/composer.json
-
-# Baixar WordPress antes de instalar dependências PHP
-RUN wp core download --allow-root --path=/var/www/html --version=6.4 --locale=pt_BR
-
-# Instalar dependências via Composer
+# Composer setup
+COPY composer.json ./
+RUN chmod 664 composer.json
+RUN wp core download --allow-root --version=6.4 --locale=pt_BR --path=/var/www/html
 RUN composer require vlucas/phpdotenv && \
     composer config --no-plugins allow-plugins.* true && \
     composer config --global allow-plugins.johnpbloch/wordpress-core-installer true && \
     composer install --no-dev --optimize-autoloader
 
-# Copiar plugins e temas
-COPY ./bdm-digital-payment-gateway /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
-COPY ./woocommerce /var/www/html/wp-content/plugins/woocommerce
-COPY ./storefront /var/www/html/wp-content/themes/storefront
-COPY ./classic-editor /var/www/html/wp-content/plugins/classic-editor
+# Plugins e temas
+COPY ./bdm-digital-payment-gateway ./wp-content/plugins/bdm-digital-payment-gateway
+COPY ./woocommerce ./wp-content/plugins/woocommerce
+COPY ./storefront ./wp-content/themes/storefront
+COPY ./classic-editor ./wp-content/plugins/classic-editor
 
-# Instalar npm e buildar SCSS
+# Build SCSS do plugin
 WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 RUN npm install && npm run build
 
-# Permissões e remoção de plugins desnecessários
+# Permissões e limpeza
 WORKDIR /var/www/html
 RUN chown -R www-data:www-data wp-content/plugins && \
     chmod -R 755 wp-content/plugins && \
     rm -rf wp-content/plugins/hello.php wp-content/plugins/hello-dolly wp-content/plugins/akismet
 
-# Criar diretório uploads com permissões
+# Uploads
 RUN mkdir -p wp-content/uploads && \
     chown -R www-data:www-data wp-content/uploads && \
     chmod -R 775 wp-content/uploads
 
-# Copiar arquivo .env
+# Arquivos de configuração
 COPY .env /var/www/.env
-
-# Copiar template de wp-config.php e script de configuração
 COPY ./wp-config-template.php /var/www/html/wp-config-template.php
 COPY ./setup-wp-config.sh /usr/local/bin/setup-wp-config.sh
 RUN dos2unix /usr/local/bin/setup-wp-config.sh && chmod +x /usr/local/bin/setup-wp-config.sh
 
-# Apenas cria o wp-config.php se ainda não existir
-RUN if [ ! -f /var/www/html/wp-config.php ]; then cp wp-config-template.php wp-config.php; fi
+# Apenas criar o wp-config.php se necessário
+RUN [ ! -f wp-config.php ] && cp wp-config-template.php wp-config.php || true
 
-# Copiar SQL de dados iniciais
-COPY ./bdm_digital_plugin.sql /docker-entrypoint-initdb.d/bdm_digital_plugin.sql
+# SQL inicial
+COPY ./bdm_digital_plugin.sql /docker-entrypoint-initdb.d/
 RUN chmod 644 /docker-entrypoint-initdb.d/bdm_digital_plugin.sql
 
-# Script de inicialização do banco
+# Script init-db
 COPY ./init-db.sh /usr/local/bin/init-db.sh
 RUN dos2unix /usr/local/bin/init-db.sh && chmod +x /usr/local/bin/init-db.sh
 
-# Apache customizado
+# Configuração Apache
 COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# Expõe porta
 EXPOSE 80
 
-# Script de entrada
-ENTRYPOINT ["/usr/local/bin/setup-wp-config.sh"]
+# Entrypoint final
+ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/setup-wp-config.sh && docker-entrypoint.sh apache2-foreground"]
