@@ -54,3 +54,46 @@ if [ -n "$SITE_URL" ]; then
 else
   echo "Variável SITE_URL não definida. Pulando search-replace."
 fi
+
+# Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir
+CURRENT_URL="http://$(wp option get home --allow-root)"
+TARGET_URL="http://54.207.73.19:8000/"
+
+echo CURRENT_URL;
+echo TARGET_URL;
+
+if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
+  echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
+
+  # Executar substituição de URL através de SQL
+  echo "Atualizando URLs através de SQL..."
+
+  # Substituir na tabela wp_options (siteurl e home)
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_options SET option_value = REPLACE(option_value, 'http://localhost:8000/', 'http://54.207.73.19:8000/') WHERE option_name IN ('siteurl', 'home');"
+
+  # Substituir em wp_postmeta
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, 'http://localhost:8000/', 'http://54.207.73.19:8000/') WHERE meta_value LIKE '%localhost:8000%';"
+
+  # Substituir em wp_usermeta
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_usermeta SET meta_value = REPLACE(meta_value, 'http://localhost:8000/', 'http://54.207.73.19:8000/') WHERE meta_value LIKE '%localhost:8000%';"
+
+  # Verificar URLs no banco de dados (debugging)
+  echo "Verificando URLs alteradas..."
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "SELECT * FROM wp_postmeta WHERE meta_value LIKE '%54.207.73.19:8000%';"
+
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "SELECT * FROM wp_usermeta WHERE meta_value LIKE '%54.207.73.19:8000%';"
+
+  # Limpar cache do WordPress, se houver
+  echo "Limpando cache do WordPress..."
+  wp cache flush --allow-root
+
+else
+  echo "O domínio já é o esperado ($CURRENT_URL). Nenhuma substituição necessária."
+fi
+
+echo "Processo concluído."
