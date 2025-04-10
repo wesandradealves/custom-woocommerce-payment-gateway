@@ -65,7 +65,7 @@ sed -i "s/getenv('WORDPRESS_DB_NAME')/'${WORDPRESS_DB_NAME}'/" "$WPCONFIG"
 sed -i "s/getenv('WORDPRESS_DB_USER')/'${WORDPRESS_DB_USER}'/" "$WPCONFIG"
 sed -i "s/getenv('WORDPRESS_DB_PASSWORD')/'${WORDPRESS_DB_PASSWORD}'/" "$WPCONFIG"
 sed -i "s/getenv('WORDPRESS_DB_HOST')/'${WORDPRESS_DB_HOST}'/" "$WPCONFIG"
-sed -i "s/getenv('WP_DEBUG') === 'true'/true/" "$WPCONFIG"
+sed -i "s/getenv('WP_DEBUG')/'${WP_DEBUG}'/" "$WPCONFIG"
 sed -i "s/getenv('JWT_AUTH_SECRET_KEY')/'${JWT_AUTH_SECRET_KEY}'/" "$WPCONFIG"
 
 # ➕ Adicionar define() se não existir
