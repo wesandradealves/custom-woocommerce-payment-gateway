@@ -36,31 +36,16 @@ else
   echo "Banco de dados já contém tabelas. Pulando importação."
 fi
 
-# Atualizar URLs do WordPress se SITE_URL estiver definido e for diferente do atual
-if [ -n "$SITE_URL" ]; then
-  CURRENT_SITEURL=$(wp option get siteurl --allow-root)
-  CURRENT_HOME=$(wp option get home --allow-root)
+# Determine o ambiente e a URL de destino
+echo "# Determine o ambiente e a URL de destino"
 
-  echo "Site URL atual no banco:"
-  echo "siteurl = $CURRENT_SITEURL"
-  echo "home    = $CURRENT_HOME"
-
-  if [ "$CURRENT_SITEURL" != "$SITE_URL" ] || [ "$CURRENT_HOME" != "$SITE_URL" ]; then
-    echo "Atualizando URLs do WordPress para $SITE_URL..."
-
-    # Atualizar siteurl e home na wp_options
-    mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
-      "UPDATE wp_options SET option_value = '$SITE_URL' WHERE option_name = 'siteurl';"
-    
-    mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
-      "UPDATE wp_options SET option_value = '$SITE_URL' WHERE option_name = 'home';"
-
-    echo "URLs do WordPress atualizadas com sucesso!"
-  else
-    echo "SITE_URL já está correto: $CURRENT_SITEURL"
-  fi
+if [ "$ENVIRONMENT" == "local" ]; then
+  TARGET_URL="http://localhost:8000/"
+elif [ "$ENVIRONMENT" == "hml" ]; then
+  TARGET_URL="http://54.207.73.19:8000/"
 else
-  echo "Variável SITE_URL não definida. Pulando search-replace."
+  echo "Ambiente desconhecido: $ENVIRONMENT"
+  exit 1
 fi
 
 # Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir

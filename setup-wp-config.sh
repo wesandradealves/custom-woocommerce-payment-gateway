@@ -17,6 +17,18 @@ for var in "${required_vars[@]}"; do
   fi
 done
 
+# Determine o ambiente e a URL de destino
+echo "# Determine o ambiente e a URL de destino"
+
+if [ "$ENVIRONMENT" == "local" ]; then
+  TARGET_URL="http://localhost:8000/"
+elif [ "$ENVIRONMENT" == "hml" ]; then
+  TARGET_URL="http://54.207.73.19:8000/"
+else
+  echo "Ambiente desconhecido: $ENVIRONMENT"
+  exit 1
+fi
+
 # ✅ Mostrar variáveis carregadas
 echo "✅ WORDPRESS_DB_HOST=$WORDPRESS_DB_HOST"
 echo "✅ WORDPRESS_DB_USER=$WORDPRESS_DB_USER"
@@ -25,6 +37,7 @@ echo "✅ WORDPRESS_DB_NAME=$WORDPRESS_DB_NAME"
 echo "✅ JWT_AUTH_SECRET_KEY=$JWT_AUTH_SECRET_KEY"
 echo "✅ SITE_URL=$SITE_URL"
 echo "✅ WP_DEBUG=$WP_DEBUG"
+echo "✅ TARGET_URL=$TARGET_URL"
 
 WPCONFIG="/var/www/html/wp-config.php"
 WPCONFIG_TEMPLATE="/var/www/html/wp-config-template.php"
@@ -89,7 +102,7 @@ fi
 if ! wp core is-installed --allow-root; then
     echo "⚠️ WordPress ainda não está instalado. Instalando agora..."
     wp core install \
-        --url="$SITE_URL" \
+        --url="$TARGET_URL" \
         --title="Meu Site WordPress" \
         --admin_user="$WORDPRESS_USER" \
         --admin_password="$WORDPRESS_PWD" \
