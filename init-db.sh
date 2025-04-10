@@ -47,7 +47,15 @@ if [ -n "$SITE_URL" ]; then
 
   if [ "$CURRENT_SITEURL" != "$SITE_URL" ] || [ "$CURRENT_HOME" != "$SITE_URL" ]; then
     echo "Atualizando URLs do WordPress para $SITE_URL..."
-    wp search-replace "$CURRENT_SITEURL" "$SITE_URL" --all-tables --precise --allow-root
+
+    # Atualizar siteurl e home na wp_options
+    mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+      "UPDATE wp_options SET option_value = '$SITE_URL' WHERE option_name = 'siteurl';"
+    
+    mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+      "UPDATE wp_options SET option_value = '$SITE_URL' WHERE option_name = 'home';"
+
+    echo "URLs do WordPress atualizadas com sucesso!"
   else
     echo "SITE_URL já está correto: $CURRENT_SITEURL"
   fi
@@ -59,8 +67,8 @@ fi
 CURRENT_URL="http://$(wp option get home --allow-root)"
 TARGET_URL="http://54.207.73.19:8000/"
 
-echo CURRENT_URL;
-echo TARGET_URL;
+echo "Domínio atual: $CURRENT_URL"
+echo "Domínio de destino: $TARGET_URL"
 
 if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
   echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
