@@ -15,16 +15,8 @@ if (!defined('ABSPATH')) {
 $storefront_theme = wp_get_theme('storefront');
 
 if ($storefront_theme->exists()) {
-    // Ativa o tema Storefront
     switch_theme('storefront');
-} else {
-    // Exibe uma mensagem de aviso se o tema não estiver instalado
-    add_action('admin_notices', function () {
-        echo '<div class="notice notice-warning is-dismissible"><p>' .
-            __('O tema Storefront não está instalado. Por favor, instale o tema Storefront para uma melhor experiência.', 'bdm-digital-payment-gateway') .
-            '</p></div>';
-    });
-}
+} 
 
 register_activation_hook(__FILE__, 'bdm_install_classic_editor');
 function bdm_install_classic_editor() {
@@ -39,7 +31,6 @@ function bdm_install_classic_editor() {
     } else {
         activate_plugin('woocommerce/woocommerce.php');
         bdm_create_checkout_page();
-        // Verifica se o tema Storefront está instalado
     }
 }
 
@@ -175,45 +166,8 @@ function bdm_enqueue_scripts() {
     }
 }
 add_action('wp_enqueue_scripts', 'bdm_enqueue_scripts');
-
-// function my_custom_update_order_status() {
-//     register_rest_route('store/v1', '/update-payment/', array(
-//         'methods'  => 'POST',
-//         'callback' => 'my_handle_order_payment_update',
-//         'permission_callback' => '__return_true' 
-//     ));
-// }
-
-// add_action('rest_api_init', 'my_custom_update_order_status');
-
-// function my_handle_order_payment_update(WP_REST_Request $request) {
-//     $secret_key = $request->get_param('consumer_secret');
-
-//     $order_id     = $request->get_param('order_id');
-//     $payment_status = $request->get_param('status');
-//     $request_key  = $request->get_param('consumer_key');
-
-//     $order = wc_get_order($order_id);
-//     if (!$order) {
-//         return new WP_REST_Response(array('error' => 'Invalid order ID'), 400);
-//     }
-
-//     $allowed_statuses = array('pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed');
-
-//     if (!in_array($payment_status, $allowed_statuses)) {
-//         return new WP_REST_Response(array('error' => 'Invalid status'), 400);
-//     }
-
-//     $order->update_status($payment_status, 'Updated via API');
-//     return new WP_REST_Response(array(
-//         'message' => 'Order status updated successfully',
-//         'order_id' => $order_id,
-//         'new_status' => $payment_status
-//     ), 200);
-// }
-
 add_action('wp_ajax_create_bdm_order', 'create_bdm_order');
-add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); // For non-logged-in users (optional)
+add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); 
 
 function create_bdm_order() {
     if (!isset($_POST['billing_code'], $_POST['amount'], $_POST['partner_email'], $_POST['products'])) {
@@ -261,7 +215,7 @@ function init_gateway_class() {
         private $asset;
         private $rest_key;
         private $rest_secret;
-        private $endpoint_quotation; // Adicione esta linha
+        private $endpoint_quotation; 
 
         public function __construct() {
             $this->id = 'bdm-digital';
@@ -350,44 +304,5 @@ function init_gateway_class() {
                 ), 
             );
         }
-
-        // public function process_payment($order_id) {
-        //     $order = wc_get_order($order_id);
-
-        //     $payload = array(
-        //         'partnerEmail' => $this->partner_email,
-        //         'amount' => (float) $order->get_total(),
-        //         'toAsset' => $this->partner_email,
-        //         'attachment' => '',
-        //         'fromAsset' => $this->partner_email
-        //     );
-
-        //     $response = wp_remote_post($this->endpoint . '/ecommerce-partner/billing-code', array(
-        //         'method'    => 'POST',
-        //         'body'      => json_encode($payload),
-        //         'headers'   => array(
-        //             'Content-Type'  => 'application/json',
-        //             'x-api-key'     => $this->api_key
-        //         ),
-        //         'timeout'   => 60,
-        //     ));
-
-        //     if (is_wp_error($response)) {
-        //         wc_add_notice(__('Payment error: ', 'woocommerce') . $response->get_error_message(), 'error');
-        //         return;
-        //     }
-
-        //     $body = json_decode(wp_remote_retrieve_body($response), true);
-        //     if (isset($body['QrCode'])) {
-        //         $order->update_status('on-hold', __('Awaiting PIX payment.', 'woocommerce'));
-        //         return array(
-        //             'result'   => 'success',
-        //             'redirect' => $this->get_return_url($order)
-        //         );
-        //     }
-            
-        //     wc_add_notice(__('Payment failed.', 'woocommerce'), 'error');
-        //     return;
-        // }
     }
 }
