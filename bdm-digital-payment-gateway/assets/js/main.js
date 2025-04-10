@@ -62,7 +62,7 @@
 
         handleCheckout: async function () {
             const totalPrice = this.calculateTotalPrice(this.state.products);
-            const amount = parseFloat((20 / 14.27).toFixed(6)); 
+            const amount = parseFloat((20 / this.state.cotation).toFixed(6)); 
 
             UI.updateCheckoutUIBefore(totalPrice, amount);
 
