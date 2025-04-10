@@ -38,6 +38,8 @@ echo "✅ JWT_AUTH_SECRET_KEY=$JWT_AUTH_SECRET_KEY"
 echo "✅ SITE_URL=$SITE_URL"
 echo "✅ WP_DEBUG=$WP_DEBUG"
 echo "✅ TARGET_URL=$TARGET_URL"
+echo "✅ WP_DEBUG=$WP_DEBUG"
+echo "✅ WP_DEBUG_DISPLAY=$WP_DEBUG_DISPLAY"
 
 WPCONFIG="/var/www/html/wp-config.php"
 WPCONFIG_TEMPLATE="/var/www/html/wp-config-template.php"
@@ -66,6 +68,7 @@ sed -i "s/getenv('WORDPRESS_DB_USER')/'${WORDPRESS_DB_USER}'/" "$WPCONFIG"
 sed -i "s/getenv('WORDPRESS_DB_PASSWORD')/'${WORDPRESS_DB_PASSWORD}'/" "$WPCONFIG"
 sed -i "s/getenv('WORDPRESS_DB_HOST')/'${WORDPRESS_DB_HOST}'/" "$WPCONFIG"
 sed -i "s/getenv('WP_DEBUG')/'${WP_DEBUG}'/" "$WPCONFIG"
+sed -i "s/getenv('WP_DEBUG_DISPLAY')/'${WP_DEBUG_DISPLAY}'/" "$WPCONFIG"
 sed -i "s/getenv('JWT_AUTH_SECRET_KEY')/'${JWT_AUTH_SECRET_KEY}'/" "$WPCONFIG"
 
 # ➕ Adicionar define() se não existir
