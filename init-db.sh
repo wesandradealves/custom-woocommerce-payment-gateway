@@ -54,3 +54,32 @@ if [ -n "$SITE_URL" ]; then
 else
   echo "Variável SITE_URL não definida. Pulando search-replace."
 fi
+
+# Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir
+CURRENT_URL="http://$(wp option get home --allow-root)"
+TARGET_URL="http://54.207.73.19:8000/"
+
+if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
+  echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
+
+  # Substituir todas as ocorrências de http://localhost:8000/ para http://54.207.73.19:8000/
+  echo "Atualizando todas as ocorrências de http://localhost:8000/ para http://54.207.73.19:8000/..."
+  wp search-replace 'http://localhost:8000/' 'http://54.207.73.19:8000/' --all-tables --precise --allow-root
+
+  # Verificar URLs em campos de meta (postmeta e usermeta)
+  echo "Verificando e atualizando URLs em wp_postmeta e wp_usermeta..."
+  wp db query "SELECT * FROM wp_postmeta WHERE meta_value LIKE '%localhost:8000%'" --allow-root
+  wp db query "SELECT * FROM wp_usermeta WHERE meta_value LIKE '%localhost:8000%'" --allow-root
+
+  wp search-replace 'http://localhost:8000/' 'http://54.207.73.19:8000/' wp_postmeta --allow-root
+  wp search-replace 'http://localhost:8000/' 'http://54.207.73.19:8000/' wp_usermeta --allow-root
+
+  # Limpar cache do WordPress, se houver
+  echo "Limpando cache do WordPress..."
+  wp cache flush --allow-root
+
+else
+  echo "O domínio já é o esperado ($CURRENT_URL). Nenhuma substituição necessária."
+fi
+
+echo "Processo concluído."
