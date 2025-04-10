@@ -134,7 +134,7 @@ function bdm_enqueue_scripts() {
             'toast-js',
             '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js',
             array('jquery'),
-            filemtime('//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js'),
+            '1.3.2',
             true
         );
 
@@ -176,41 +176,41 @@ function bdm_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'bdm_enqueue_scripts');
 
-function my_custom_update_order_status() {
-    register_rest_route('store/v1', '/update-payment/', array(
-        'methods'  => 'POST',
-        'callback' => 'my_handle_order_payment_update',
-        'permission_callback' => '__return_true' 
-    ));
-}
+// function my_custom_update_order_status() {
+//     register_rest_route('store/v1', '/update-payment/', array(
+//         'methods'  => 'POST',
+//         'callback' => 'my_handle_order_payment_update',
+//         'permission_callback' => '__return_true' 
+//     ));
+// }
 
-add_action('rest_api_init', 'my_custom_update_order_status');
+// add_action('rest_api_init', 'my_custom_update_order_status');
 
-function my_handle_order_payment_update(WP_REST_Request $request) {
-    $secret_key = $request->get_param('consumer_secret');
+// function my_handle_order_payment_update(WP_REST_Request $request) {
+//     $secret_key = $request->get_param('consumer_secret');
 
-    $order_id     = $request->get_param('order_id');
-    $payment_status = $request->get_param('status');
-    $request_key  = $request->get_param('consumer_key');
+//     $order_id     = $request->get_param('order_id');
+//     $payment_status = $request->get_param('status');
+//     $request_key  = $request->get_param('consumer_key');
 
-    $order = wc_get_order($order_id);
-    if (!$order) {
-        return new WP_REST_Response(array('error' => 'Invalid order ID'), 400);
-    }
+//     $order = wc_get_order($order_id);
+//     if (!$order) {
+//         return new WP_REST_Response(array('error' => 'Invalid order ID'), 400);
+//     }
 
-    $allowed_statuses = array('pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed');
+//     $allowed_statuses = array('pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed');
 
-    if (!in_array($payment_status, $allowed_statuses)) {
-        return new WP_REST_Response(array('error' => 'Invalid status'), 400);
-    }
+//     if (!in_array($payment_status, $allowed_statuses)) {
+//         return new WP_REST_Response(array('error' => 'Invalid status'), 400);
+//     }
 
-    $order->update_status($payment_status, 'Updated via API');
-    return new WP_REST_Response(array(
-        'message' => 'Order status updated successfully',
-        'order_id' => $order_id,
-        'new_status' => $payment_status
-    ), 200);
-}
+//     $order->update_status($payment_status, 'Updated via API');
+//     return new WP_REST_Response(array(
+//         'message' => 'Order status updated successfully',
+//         'order_id' => $order_id,
+//         'new_status' => $payment_status
+//     ), 200);
+// }
 
 add_action('wp_ajax_create_bdm_order', 'create_bdm_order');
 add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); // For non-logged-in users (optional)
