@@ -29,7 +29,6 @@ function bdm_install_classic_editor() {
             ['back_link' => true]
         );
     } else {
-        activate_plugin('woocommerce/woocommerce.php');
         bdm_create_checkout_page();
     }
 }
@@ -42,7 +41,7 @@ function bdm_create_checkout_page() {
         'post_status'   => 'publish',
         'post_type'     => 'page',
         'post_author'   => 1,
-        'page_template' => 'bdm-checkout-template.php'
+        'page_template' => 'checkout.php'
     );
     
     if (!get_page_by_path('bdm-checkout')) {
@@ -70,14 +69,14 @@ function bdm_add_settings_link($links) {
 
 add_filter('theme_page_templates', 'bdm_register_custom_template');
 function bdm_register_custom_template($templates) {
-    $templates['bdm-checkout-template.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
+    $templates['checkout.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
     return $templates;
 }
 
 add_filter('template_include', 'bdm_load_custom_template');
 function bdm_load_custom_template($template) {
     if (is_page('bdm-checkout')) {
-        $plugin_template = plugin_dir_path(__FILE__) . 'templates/checkout-template.php';
+        $plugin_template = plugin_dir_path(__FILE__) . 'templates/checkout.php';
         if (file_exists($plugin_template)) {
             return $plugin_template;
         }
