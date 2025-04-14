@@ -93,10 +93,10 @@ until mysqladmin ping -h"$WORDPRESS_DB_HOST" --silent; do
 done
 echo "✅ MySQL está pronto!"
 
-# 🧪 Executar script de inicialização do banco de dados
+🧪 Executar script de inicialização do banco de dados
 if [ -f /usr/local/bin/init-db.sh ]; then
   echo "🗄️ Executando init-db.sh..."
-  /bin/bash /usr/local/bin/init-db.sh
+ /bin/bash /usr/local/bin/init-db.sh
 else
   echo "⚠️ init-db.sh não encontrado."
 fi

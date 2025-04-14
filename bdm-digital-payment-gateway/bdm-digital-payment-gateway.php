@@ -29,7 +29,6 @@ function bdm_install_classic_editor() {
             ['back_link' => true]
         );
     } else {
-        activate_plugin('woocommerce/woocommerce.php');
         bdm_create_checkout_page();
     }
 }
@@ -149,16 +148,16 @@ function bdm_enqueue_scripts() {
                 );
             }, WC()->cart->get_cart()),
             'settings' => array(
-                'api_key' => isset($settings['api_key']) ? $settings['api_key'] : '',
+                'api_key' => $settings['api_key'] ?? '',
                 'endpoint' => $settings['sandbox']
                 ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
                 : 'https://partner.dourado.cash/',
-                'asset' => isset($settings['asset']) ? $settings['asset'] : '',
-                'partner_email' => isset($settings['partner_email']) ? $settings['partner_email'] : '',
-                'sandbox' => isset($settings['sandbox']) ? $settings['sandbox'] : 'yes',
-                'consumer_key' => isset($settings['rest_key']) ? $settings['rest_key'] : '',
-                'endpoint_quotation' => isset($settings['endpoint_quotation']) ? $settings['endpoint_quotation'] : '',
-                'consumer_secret' => isset($settings['rest_secret']) ? $settings['rest_secret'] : ''
+                'asset' => $settings['asset'] ?? '',
+                'partner_email' => $settings['partner_email'] ?? '',
+                'sandbox' => $settings['sandbox'] ?? '',
+                'consumer_key' => $settings['rest_key'] ?? '',
+                'endpoint_quotation' => $settings['endpoint_quotation'] ?? '',
+                'consumer_secret' => $settings['rest_secret'] ?? ''
             )
         );
 

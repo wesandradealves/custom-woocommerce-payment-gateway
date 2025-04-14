@@ -65,8 +65,11 @@ RUN chown -R www-data:www-data wp-content/plugins && \
 
 # Uploads
 RUN mkdir -p wp-content/uploads && \
+    chown -R www-data:www-data /var/www/html/ && \
     chown -R www-data:www-data wp-content/uploads && \
-    chmod -R 775 wp-content/uploads
+    chmod -R 775 wp-content/uploads && \
+    chmod -R 775 wp-content && \
+    chmod -R 775 wp-admin
 
 # Arquivos de configuração
 COPY .env /var/www/.env
