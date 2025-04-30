@@ -41,7 +41,8 @@ WORKDIR /var/www/html
 # Composer setup
 COPY composer.json ./
 RUN chmod 664 composer.json
-RUN wp core download --allow-root --version=6.4 --locale=pt_BR --path=/var/www/html
+RUN php -d memory_limit=-1 /usr/local/bin/wp core download --allow-root --locale=pt_BR --path=/var/www/html
+
 RUN composer require vlucas/phpdotenv && \
     composer config --no-plugins allow-plugins.* true && \
     composer config --global allow-plugins.johnpbloch/wordpress-core-installer true && \

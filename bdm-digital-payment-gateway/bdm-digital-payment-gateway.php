@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!class_exists('WP_REST_Response')) {
+    require_once ABSPATH . 'wp-includes/rest-api.php';
+}
+
 $storefront_theme = wp_get_theme('storefront');
 
 if ($storefront_theme->exists()) {
@@ -41,7 +45,6 @@ function bdm_create_checkout_page() {
         'post_status'   => 'publish',
         'post_type'     => 'page',
         'post_author'   => 1,
-        'page_template' => 'bdm-checkout-template.php'
     );
     
     if (!get_page_by_path('bdm-checkout')) {
@@ -69,7 +72,7 @@ function bdm_add_settings_link($links) {
 
 add_filter('theme_page_templates', 'bdm_register_custom_template');
 function bdm_register_custom_template($templates) {
-    $templates['bdm-checkout-template.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
+    $templates['templates/checkout-template.php'] = __('BDM Checkout Template', 'bdm-digital-payment-gateway');
     return $templates;
 }
 
@@ -202,6 +205,47 @@ function create_bdm_order() {
     $order->save();
 
     wp_send_json_success(['order_id' => $order->get_id()]);
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route('store/v1', '/update-payment', array(
+        'methods' => 'POST',
+        'callback' => 'bdm_update_payment_status',
+        'permission_callback' => '__return_true',
+    ));
+});
+
+function bdm_update_payment_status($request) {
+    $params = $request->get_json_params();
+    $order_id = absint($params['order_id'] ?? 0);
+    $status = strtolower(sanitize_text_field($params['status'] ?? ''));
+    $key = sanitize_text_field($params['consumer_key'] ?? '');
+    $secret = sanitize_text_field($params['consumer_secret'] ?? '');
+
+    $valid_key = get_option('woocommerce_bdm-digital_settings')['rest_key'] ?? '';
+    $valid_secret = get_option('woocommerce_bdm-digital_settings')['rest_secret'] ?? '';
+
+    if ($key !== $valid_key || $secret !== $valid_secret) {
+        return new WP_REST_Response(['message' => 'Unauthorized'], 401);
+    }
+
+    if (!$order_id || !in_array($status, ['completed', 'processing', 'failed'])) {
+        return new WP_REST_Response(['message' => 'Invalid parameters'], 400);
+    }
+
+    $order = wc_get_order($order_id);
+    if (!$order) {
+        return new WP_REST_Response(['message' => 'Order not found'], 404);
+    }
+
+    if (in_array($status, ['completed', 'processing'])) {
+        $order->payment_complete(); 
+        $order->update_status($status); 
+    } elseif ($status === 'failed') {
+        $order->update_status('failed', __('Pagamento falhou via BDM.', 'bdm-digital-payment-gateway'));
+    }
+
+    return new WP_REST_Response(['message' => 'Order updated'], 200);
 }
 
 add_action('plugins_loaded', 'init_gateway_class');

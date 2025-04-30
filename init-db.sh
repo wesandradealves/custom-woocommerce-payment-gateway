@@ -23,7 +23,7 @@ if [ "$TABLE_COUNT" -eq 0 ]; then
   echo "O banco de dados está vazio. Verificando o arquivo SQL..."
   DUMP_FILE="/docker-entrypoint-initdb.d/bdm_digital_plugin.sql"
 
-  if [ -f "$DUMP_FILE" ]; then
+ if [ -f "$DUMP_FILE" ]; then
     echo "Importando o arquivo SQL..."
     if ! mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" < "$DUMP_FILE"; then
       echo "Erro ao importar o dump. Verifique o conteúdo do SQL."
@@ -89,6 +89,16 @@ if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
 
 else
   echo "O domínio já é o esperado ($CURRENT_URL). Nenhuma substituição necessária."
+fi
+
+# Verifica se o WP-CLI está instalado e atualiza os permalinks
+if command -v wp &> /dev/null; then
+  echo "Atualizando os permalinks..."
+  wp option update permalink_structure '/%year%/%monthnum%/%day%/%postname%/' --allow-root
+  wp option update permalink_structure '/%postname%/' --allow-root
+  wp rewrite flush --allow-root
+else
+  echo "WP-CLI não encontrado. Não foi possível atualizar os permalinks."
 fi
 
 echo "Processo concluído."
