@@ -34,7 +34,7 @@ Edit the `.env` file in the root directory to customize the following variables 
 
 ```env
 # MySQL Database
-MYSQL_DATABASE=db
+MYSQL_DATABASE=bdm_digital_plugin
 MYSQL_ROOT_PASSWORD=root
 ENVIRONMENT=local
 
@@ -42,14 +42,14 @@ ENVIRONMENT=local
 WORDPRESS_DB_HOST=mysql
 WORDPRESS_DB_USER=root
 WORDPRESS_DB_PASSWORD=root
-WORDPRESS_DB_NAME=db
+WORDPRESS_DB_NAME=bdm_digital_plugin
 WP_DEBUG=FALSE
 WP_DEBUG_DISPLAY=FALSE
 # WordPress Site
-WORDPRESS_DOMAIN=###
-WORDPRESS_USER=###
-WORDPRESS_PWD=###
-JWT_AUTH_SECRET_KEY=SECRET
+WORDPRESS_DOMAIN=localhost:8000
+WORDPRESS_USER=admin
+WORDPRESS_PWD=admin
+JWT_AUTH_SECRET_KEY=6oVSojxH7BlqRyq2l4iQbOiDikyzebKL4QtZiwBRvF5QWY91qL6kqNiatEFCE6Xb6RYsiwlr6cQpoabDQffQjw==
 
 ```
 
