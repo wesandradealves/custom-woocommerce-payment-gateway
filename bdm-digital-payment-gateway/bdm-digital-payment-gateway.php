@@ -37,6 +37,7 @@ function bdm_install_classic_editor() {
     }
 }
 
+
 function bdm_create_checkout_page() {
     $page = array(
         'post_title'    => 'BDM Checkout',
@@ -92,6 +93,19 @@ function add_gateway( $gateways ) {
 	$gateways[] = 'WC_BDM_GATEWAY'; 
 	return $gateways;
 }
+
+add_action('admin_enqueue_scripts', function ($hook) {
+    print $hook;
+    if ($hook === 'woocommerce_page_wc-orders') {
+        wp_enqueue_script(
+            'bdm-admin-checkout-handler',
+            plugin_dir_url(__FILE__) . 'assets/js/admin-remove-columns.js',
+            array('jquery'),
+            filemtime(plugin_dir_path(__FILE__) . 'assets/js/admin-remove-columns.js'),
+            true
+        );
+    }
+});
 
 function bdm_enqueue_scripts() {
     if (!class_exists('WooCommerce')) {
