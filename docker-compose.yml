@@ -28,7 +28,7 @@ services:
     links:
       - mysql
     ports:
-      - "8082:80"
+      - "8081:80"
     environment:
       PMA_HOST: ${WORDPRESS_DB_HOST}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
