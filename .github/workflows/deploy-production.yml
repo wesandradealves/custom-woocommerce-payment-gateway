@@ -27,10 +27,4 @@ jobs:
             docker-compose -f docker-compose.yml down
           	docker system prune -a --volumes -f
             docker-compose -f docker-compose.yml up -d --build
-
-            # Update WordPress URLs using WP-CLI
-            docker exec -i $(docker ps -qf "name=wordpress") wp search-replace \
-              'http://54.207.73.19:8000/' 'http://54.207.253.67:8000/' --allow-root
-
-            docker exec -i $(docker ps -qf "name=wordpress") wp cache flush --allow-root
           EOF
