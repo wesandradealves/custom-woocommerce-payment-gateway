@@ -55,8 +55,8 @@ COPY ./storefront ./wp-content/themes/storefront
 COPY ./classic-editor ./wp-content/plugins/classic-editor
 
 # Build SCSS do plugin
-WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
-RUN npm install && npm run build
+#WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+#RUN npm install && npm run build
 
 # Permissões e limpeza
 WORKDIR /var/www/html
@@ -65,12 +65,12 @@ RUN chown -R www-data:www-data wp-content/plugins && \
     rm -rf wp-content/plugins/hello.php wp-content/plugins/hello-dolly wp-content/plugins/akismet
 
 # Uploads
-RUN mkdir -p wp-content/uploads && \
-    chown -R www-data:www-data /var/www/html/ && \
-    chown -R www-data:www-data wp-content/uploads && \
-    chmod -R 775 wp-content/uploads && \
-    chmod -R 775 wp-content && \
-    chmod -R 775 wp-admin
+#RUN mkdir -p wp-content/uploads && \
+#    chown -R www-data:www-data /var/www/html/ && \
+#    chown -R www-data:www-data wp-content/uploads && \
+#    chmod -R 775 wp-content/uploads && \
+#    chmod -R 775 wp-content && \
+ #   chmod -R 775 wp-admin
 
 # Arquivos de configuração
 COPY .env /var/www/.env
