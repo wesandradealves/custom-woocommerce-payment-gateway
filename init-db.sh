@@ -42,13 +42,13 @@ echo "# Determine o ambiente e a URL de destino"
 if [ "$ENVIRONMENT" == "local" ]; then
   TARGET_URL="http://localhost:8000/"
 elif [ "$ENVIRONMENT" == "hml" ]; then
-  TARGET_URL="http://54.207.73.19:8000/"
+  TARGET_URL=$WORDPRESS_DOMAIN
 else
   echo "Ambiente desconhecido: $ENVIRONMENT"
   exit 1
 fi
 
-# Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir
+# Verificar se o domínio atual é diferente de $WORDPRESS_DOMAIN antes de substituir
 CURRENT_URL="http://$(wp option get home --allow-root)"
 
 echo "Domínio atual: $CURRENT_URL"
