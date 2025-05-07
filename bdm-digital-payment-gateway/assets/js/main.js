@@ -62,7 +62,8 @@
 
         handleCheckout: async function () {
             const totalPrice = this.calculateTotalPrice(this.state.products);
-            const amount = parseFloat((20 / 14.27).toFixed(6)); 
+
+            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(6)); 
 
             UI.updateCheckoutUIBefore(totalPrice, amount);
 
@@ -127,6 +128,8 @@
         },
 
         updateUIAfterBillingCode: function (data) {
+            console.log(data);
+            
             UI.hideLoading();
             $("#step-1, #step-2").toggleClass("d-flex d-none");
             UI.setHTML("#billingcode", data.billingCode);
@@ -148,7 +151,7 @@
                     if (response.success) {
                         console.log("✅ WooCommerce order created successfully!");
                         localStorage.setItem("order_id", response.data.order_id);
-                        this.startCountdown(1);
+                        this.startCountdown(5);
                         this.startStatusInterval();
                     } else {
                         console.error("Error creating WooCommerce order:", response.message);
@@ -207,6 +210,10 @@
                     clearInterval(this.state.intervalId);
                     Toast.success("Payment confirmed!");
                     this.updateOrderStatus(localStorage.getItem("order_id"), data.status);
+
+                    setTimeout(() => {
+                        location.reload(); 
+                    }, 5000);
                 }
             } catch (error) {
                 console.warn("[BDM Checkout] Error checking payment status:", error);
@@ -232,13 +239,29 @@
 
         copyPaymentCode: function () {
             const code = $("#billingcode").text();
-
-            navigator.clipboard.writeText(code)
-                .then(() => Toast.success("Code copied to clipboard."))
-                .catch((err) => {
-                    Toast.error("Failed to copy code.");
+        
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code)
+                    .then(() => Toast.success("Código copiado com sucesso!"))
+                    .catch((err) => {
+                        Toast.error("Erro ao copiar o código.");
+                        console.error(err);
+                    });
+            } else {
+                // Fallback
+                const tempInput = document.createElement("input");
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand("copy");
+                    Toast.success("Código copiado com sucesso!");
+                } catch (err) {
+                    Toast.error("Erro ao copiar o código.");
                     console.error(err);
-                });
+                }
+                document.body.removeChild(tempInput);
+            }
         },
     };
 

@@ -5,18 +5,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:80"
-    environment:
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
     env_file: 
       - .env
     depends_on:
       - mysql
     volumes:
-      - /var/www/html  
-      - /var/www/html/wp-content/uploads/wc-logs
+      - wordpress_data:/var/www/html
       - ./bdm-digital-payment-gateway:/var/www/html/wp-content/plugins/bdm-digital-payment-gateway
 
   mysql:
@@ -25,17 +19,20 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     env_file:
       - .env
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     links:
       - mysql
     ports:
-      - "8081:80"
+      - "8082:80"
     environment:
       PMA_HOST: ${WORDPRESS_DB_HOST}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     env_file:
       - .env
+volumes:
+  wordpress_data:

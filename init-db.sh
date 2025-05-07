@@ -1,44 +1,104 @@
 #!/bin/bash
 
+echo "Executando init-db.sh para inicializar o banco de dados e configurar URLs..."
+
 # Carregar variáveis do arquivo .env
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-# Variáveis de ambiente
-DB_HOST=${WORDPRESS_DB_HOST:-localhost}
-DB_USER=${WORDPRESS_DB_USER:-root}
-DB_PASSWORD=${WORDPRESS_DB_PASSWORD:-root}
-DB_NAME=${WORDPRESS_DB_NAME:-bdm_digital_plugin}
+# Verificar se o banco de dados já existe
+if ! mysql -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e "USE $WORDPRESS_DB_NAME"; then
+  echo "Banco de dados '$WORDPRESS_DB_NAME' não existe. Criando..."
+  mysql -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e "CREATE DATABASE $WORDPRESS_DB_NAME"
+else
+  echo "Banco de dados '$WORDPRESS_DB_NAME' já existe. Pulando criação."
+fi
 
-# Comando para verificar se o banco está vazio
-TABLE_COUNT=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$DB_NAME';" -s --skip-column-names)
+# Verifica se o banco está vazio
+TABLE_COUNT=$(mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e \
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$WORDPRESS_DB_NAME';" -s --skip-column-names)
 
-# Testa o banco de dados
 if [ "$TABLE_COUNT" -eq 0 ]; then
   echo "O banco de dados está vazio. Verificando o arquivo SQL..."
-
-  # Verificar se o arquivo dump.sql existe
   DUMP_FILE="/docker-entrypoint-initdb.d/bdm_digital_plugin.sql"
 
-  if [ -f "$DUMP_FILE" ]; then
+ if [ -f "$DUMP_FILE" ]; then
     echo "Importando o arquivo SQL..."
-    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$DUMP_FILE"
+    if ! mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" < "$DUMP_FILE"; then
+      echo "Erro ao importar o dump. Verifique o conteúdo do SQL."
+      exit 1
+    fi
   else
     echo "Arquivo $DUMP_FILE não encontrado. Abortando a importação."
   fi
-fi
-
-# Atualizar URLs do WordPress se SITE_URL estiver definido e for diferente do atual
-if [ -n "$SITE_URL" ]; then
-  CURRENT_URL=$(wp option get siteurl --allow-root)
-
-  if [ "$CURRENT_URL" != "$SITE_URL" ]; then
-    echo "Atualizando URLs do WordPress de $CURRENT_URL para $SITE_URL..."
-    wp search-replace "$CURRENT_URL" "$SITE_URL" --all-tables --allow-root
-  else
-    echo "SITE_URL já está correto: $CURRENT_URL"
-  fi
 else
-  echo "Variável SITE_URL não definida. Pulando search-replace."
+  echo "Banco de dados já contém tabelas. Pulando importação."
 fi
+
+# Determine o ambiente e a URL de destino
+echo "# Determine o ambiente e a URL de destino"
+
+if [ "$ENVIRONMENT" == "local" ]; then
+  TARGET_URL="http://localhost:8000/"
+elif [ "$ENVIRONMENT" == "hml" ]; then
+  TARGET_URL="http://54.207.73.19:8000/"
+else
+  echo "Ambiente desconhecido: $ENVIRONMENT"
+  exit 1
+fi
+
+# Verificar se o domínio atual é diferente de 54.207.73.19:8000 antes de substituir
+CURRENT_URL="http://$(wp option get home --allow-root)"
+
+echo "Domínio atual: $CURRENT_URL"
+echo "Domínio de destino: $TARGET_URL"
+echo "Env: $ENVIRONMENT"
+
+# Atualizar na tabela wp_options (siteurl e home)
+echo "Atualizando wp_options (siteurl e home)..."
+
+mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_options SET option_value = '$TARGET_URL' WHERE option_name IN ('siteurl', 'home');"
+
+if [ "$CURRENT_URL" != "$TARGET_URL" ]; then
+  echo "O domínio atual ($CURRENT_URL) não corresponde ao domínio de destino ($TARGET_URL). Realizando substituição..."
+
+  # Executar substituição de URL através de SQL
+  echo "Atualizando URLs através de SQL..."
+
+  # Substituir em wp_postmeta
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '$CURRENT_URL', '$TARGET_URL') WHERE meta_value LIKE '%$CURRENT_URL%';"
+
+  # Substituir em wp_usermeta
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "UPDATE wp_usermeta SET meta_value = REPLACE(meta_value, '$CURRENT_URL', '$TARGET_URL') WHERE meta_value LIKE '%$CURRENT_URL%';"
+
+  # Verificar URLs no banco de dados (debugging)
+  echo "Verificando URLs alteradas..."
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "SELECT * FROM wp_postmeta WHERE meta_value LIKE '%$TARGET_URL%';"
+
+  mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
+    "SELECT * FROM wp_usermeta WHERE meta_value LIKE '%$TARGET_URL%';"
+
+  # Limpar cache do WordPress, se houver
+  echo "Limpando cache do WordPress..."
+  wp cache flush --allow-root
+
+else
+  echo "O domínio já é o esperado ($CURRENT_URL). Nenhuma substituição necessária."
+fi
+
+# Verifica se o WP-CLI está instalado e atualiza os permalinks
+if command -v wp &> /dev/null; then
+  echo "Atualizando os permalinks..."
+  wp option update permalink_structure '/%year%/%monthnum%/%day%/%postname%/' --allow-root
+  wp option update permalink_structure '/%postname%/' --allow-root
+  wp rewrite flush --allow-root
+else
+  echo "WP-CLI não encontrado. Não foi possível atualizar os permalinks."
+fi
+
+echo "Processo concluído."

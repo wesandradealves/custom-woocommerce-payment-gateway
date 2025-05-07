@@ -182,7 +182,6 @@ body, html {
         #step-2 {
             #billingcode {
                 max-width: 197px;
-                text-transform: uppercase;
                 @include toRem(font-size, 17);
                 line-height: 1.3;
             }

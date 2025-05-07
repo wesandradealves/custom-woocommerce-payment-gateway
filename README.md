@@ -34,17 +34,23 @@ Edit the `.env` file in the root directory to customize the following variables 
 
 ```env
 # MySQL Database
-MYSQL_DATABASE=wordpress_db
+MYSQL_DATABASE=bdm_digital_plugin
 MYSQL_ROOT_PASSWORD=root
+ENVIRONMENT=local
 
 # WordPress Database
 WORDPRESS_DB_HOST=mysql
 WORDPRESS_DB_USER=root
 WORDPRESS_DB_PASSWORD=root
-WORDPRESS_DB_NAME=wordpress_db
-
+WORDPRESS_DB_NAME=bdm_digital_plugin
+WP_DEBUG=FALSE
+WP_DEBUG_DISPLAY=FALSE
 # WordPress Site
 WORDPRESS_DOMAIN=localhost:8000
+WORDPRESS_USER=admin
+WORDPRESS_PWD=admin
+JWT_AUTH_SECRET_KEY=6oVSojxH7BlqRyq2l4iQbOiDikyzebKL4QtZiwBRvF5QWY91qL6kqNiatEFCE6Xb6RYsiwlr6cQpoabDQffQjw==
+
 ```
 
 ### 3. Build and Start the Containers
