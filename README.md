@@ -36,7 +36,7 @@ Edit the `.env` file in the root directory to customize the following variables 
 # MySQL Database
 MYSQL_DATABASE=bdm_digital_plugin
 MYSQL_ROOT_PASSWORD=root
-ENVIRONMENT=local
+ENVIRONMENT=hml
 
 # WordPress Database
 WORDPRESS_DB_HOST=mysql
@@ -46,10 +46,11 @@ WORDPRESS_DB_NAME=bdm_digital_plugin
 WP_DEBUG=FALSE
 WP_DEBUG_DISPLAY=FALSE
 # WordPress Site
-WORDPRESS_DOMAIN=localhost:8000
+WORDPRESS_DOMAIN=54.207.253.67:8000
 WORDPRESS_USER=admin
 WORDPRESS_PWD=admin
 JWT_AUTH_SECRET_KEY=6oVSojxH7BlqRyq2l4iQbOiDikyzebKL4QtZiwBRvF5QWY91qL6kqNiatEFCE6Xb6RYsiwlr6cQpoabDQffQjw==
+
 
 ```
 
