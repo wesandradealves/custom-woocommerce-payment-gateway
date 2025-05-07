@@ -93,6 +93,8 @@ fi
 
 # Verifica se o WP-CLI está instalado e atualiza os permalinks
 if command -v wp &> /dev/null; then
+echo "Atualizando URLS..."
+  wp search-replace 'http://54.207.73.19:8000/' 'http://54.207.253.67:8000/' --allow-root
   echo "Atualizando os permalinks..."
   wp option update permalink_structure '/%year%/%monthnum%/%day%/%postname%/' --allow-root
   wp option update permalink_structure '/%postname%/' --allow-root
