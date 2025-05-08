@@ -22,8 +22,8 @@ if ($storefront_theme->exists()) {
     switch_theme('storefront');
 } 
 
-register_activation_hook(__FILE__, 'bdm_install_classic_editor');
-function bdm_install_classic_editor() {
+register_activation_hook(__FILE__, 'init');
+function init() {
     if (!is_plugin_active('woocommerce/woocommerce.php')) {
         deactivate_plugins(plugin_basename(__FILE__));
 
@@ -37,6 +37,34 @@ function bdm_install_classic_editor() {
     }
 }
 
+add_filter('woocommerce_currencies', 'bdm_add_custom_currency');
+function bdm_add_custom_currency($currencies) {
+    $currencies['BDM'] = __('BDM Digital', 'bdm-digital-payment-gateway'); 
+    return $currencies;
+}
+
+add_filter('woocommerce_currency_symbol', 'bdm_add_custom_currency_symbol', 10, 2);
+function bdm_add_custom_currency_symbol($currency_symbol, $currency) {
+    switch ($currency) {
+        case 'BDM':
+            $currency_symbol = 'BDM'; 
+            break;
+    }
+    return $currency_symbol;
+}
+
+// add_filter('option_woocommerce_currency', function($value) {
+//     return 'BDM';
+// });
+
+add_filter('woocommerce_rest_prepare_shop_order_object', function($response, $post, $request) {
+    $order = wc_get_order($post->ID);
+    $origin = $order->get_meta('_order_origin');
+    $response->data['meta_data']['_order_origin'] = $origin;
+    return $response;
+}, 10, 3);
+
+// 
 
 function bdm_create_checkout_page() {
     $page = array(
@@ -98,9 +126,9 @@ add_action('admin_enqueue_scripts', function ($hook) {
     if ($hook === 'woocommerce_page_wc-orders') {
         wp_enqueue_script(
             'bdm-admin-checkout-handler',
-            plugin_dir_url(__FILE__) . 'assets/js/admin-remove-columns.js',
+            plugin_dir_url(__FILE__) . 'assets/js/admin.js',
             array('jquery'),
-            filemtime(plugin_dir_path(__FILE__) . 'assets/js/admin-remove-columns.js'),
+            filemtime(plugin_dir_path(__FILE__) . 'assets/js/admin.js'),
             true
         );
     }
@@ -166,8 +194,8 @@ function bdm_enqueue_scripts() {
             'settings' => array(
                 'api_key' => $settings['api_key'] ?? '',
                 'endpoint' => $settings['sandbox']
-                ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
-                : 'https://partner.dourado.cash/',
+                ? (getenv('DEV_URL') ?? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/')
+                : (getenv('API_ENDPOINT') ?? 'https://api.example.com/'),
                 'asset' => $settings['asset'] ?? '',
                 'partner_email' => $settings['partner_email'] ?? '',
                 'sandbox' => $settings['sandbox'] ?? '',
@@ -213,9 +241,13 @@ function create_bdm_order() {
 
     $order->set_total($amount);
 
+    $order->set_currency('BDM');
+
     $order->update_meta_data('_billing_code', $billing_code);
 
     $order->save();
+
+    update_post_meta($order->get_id(), '_order_origin', 'BDM Checkout');
 
     wp_send_json_success(['order_id' => $order->get_id()]);
 }
