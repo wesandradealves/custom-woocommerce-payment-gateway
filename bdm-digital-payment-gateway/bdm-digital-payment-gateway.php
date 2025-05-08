@@ -53,18 +53,12 @@ function bdm_add_custom_currency_symbol($currency_symbol, $currency) {
     return $currency_symbol;
 }
 
-// add_filter('option_woocommerce_currency', function($value) {
-//     return 'BDM';
-// });
-
 add_filter('woocommerce_rest_prepare_shop_order_object', function($response, $post, $request) {
     $order = wc_get_order($post->ID);
     $origin = $order->get_meta('_order_origin');
     $response->data['meta_data']['_order_origin'] = $origin;
     return $response;
 }, 10, 3);
-
-// 
 
 function bdm_create_checkout_page() {
     $page = array(
@@ -133,7 +127,11 @@ add_action('admin_enqueue_scripts', function ($hook) {
         );
     }
 });
-
+function bdm_get_api_endpoint($sandbox) {
+    return $sandbox && $sandbox !== "no"
+        ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
+        : 'https://piyzov0kjl.execute-api.sa-east-1.amazonaws.com/';
+}
 function bdm_enqueue_scripts() {
     if (!class_exists('WooCommerce')) {
         return;
@@ -193,14 +191,12 @@ function bdm_enqueue_scripts() {
             }, WC()->cart->get_cart()),
             'settings' => array(
                 'api_key' => $settings['api_key'] ?? '',
-                'endpoint' => $settings['sandbox']
-                ? (getenv('DEV_URL') ?? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/')
-                : (getenv('API_ENDPOINT') ?? 'https://api.example.com/'),
+                'endpoint' => bdm_get_api_endpoint($settings['sandbox']),
                 'asset' => $settings['asset'] ?? '',
                 'partner_email' => $settings['partner_email'] ?? '',
                 'sandbox' => $settings['sandbox'] ?? '',
                 'consumer_key' => $settings['rest_key'] ?? '',
-                'endpoint_quotation' => $settings['endpoint_quotation'] ?? '',
+                'endpoint_quotation' => 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/ecommerce-partner/clients/quotation/all',
                 'consumer_secret' => $settings['rest_secret'] ?? ''
             )
         );
@@ -303,7 +299,6 @@ function init_gateway_class() {
         private $asset;
         private $rest_key;
         private $rest_secret;
-        private $endpoint_quotation; 
 
         public function __construct() {
             $this->id = 'bdm-digital';
@@ -315,17 +310,14 @@ function init_gateway_class() {
             $this->init_settings();
         
             $this->title = $this->get_option('title');
-            $this->api_key = $this->get_option('api_key') === 'AwXs58ExCGKzK7coV2lw5RqMgETNpg+wplLcKeOPQOR7NhOzEfn/5ca1fGE+6kMw';
-            $this->partner_email = $this->get_option('partner_email') === 'wesley.andrade@dourado.tech';
-            $this->sandbox = $this->get_option('sandbox') === 'yes';
+            $this->api_key = $this->get_option('api_key');
+            $this->partner_email = $this->get_option('partner_email');
+            $this->sandbox = $this->get_option('sandbox') === 'no';
             $this->asset = $this->get_option('asset') === 'BDM';
-            $this->rest_key = $this->get_option('rest_key') === 'ck_3e5bb37ed71eb20d4071722b9c26a171131a29f9';
-            $this->rest_secret = $this->get_option('rest_secret') === 'cs_3deba108ca46008b9a07a0f918b03ca9b7b90ee6';
-            $this->endpoint_quotation = $this->get_option('endpoint_quotation') === 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/ecommerce-partner/clients/quotation/all/BDM';
+            $this->rest_key = $this->get_option('rest_key');
+            $this->rest_secret = $this->get_option('rest_secret');
         
-            $this->endpoint = $this->sandbox
-                ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
-                : 'https://api.example.com/';
+            $this->endpoint = bdm_get_api_endpoint($this->sandbox);
         
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         }
@@ -383,13 +375,7 @@ function init_gateway_class() {
                     'type' => 'text',
                     'label' => __('Rest API Secret', 'woocommerce'),
                     'default' => $this->get_option('rest_secret') ?? ''
-                ), 
-                'endpoint_quotation' => array(
-                    'title' => __('Cotation Endpoint', 'woocommerce'),
-                    'type' => 'text',
-                    'label' => __('Cotation Endpoint', 'woocommerce'),
-                    'default' => $this->get_option('endpoint_quotation') ?? ''
-                ), 
+                )
             );
         }
     }
