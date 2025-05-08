@@ -49,15 +49,22 @@ else
 fi
 
 # Verificar se o domínio atual é diferente de $TARGET_URL antes de substituir
-CURRENT_URL="http://$(wp option get home --allow-root)"
-TARGET_URL="http://${TARGET_URL}/"
+echo "TARGET_URL: ${TARGET_URL}"
 
-echo "Domínio atual: $CURRENT_URL"
-echo "Domínio de destino: $TARGET_URL"
-echo "Env: $ENVIRONMENT"
+if [ "$ENVIRONMENT" == "local" ]; then
+  echo "Ambiente local detectado. Usando URL padrão: http://localhost:8000/"
+  TARGET_URL="http://localhost:8000/"
+else
+  echo "Ambiente de produção detectado. Usando URL do banco de dados: $TARGET_URL"
+  CURRENT_URL="http://$(wp option get home --allow-root)"
+  TARGET_URL="http://${TARGET_URL}/"
+fi
 
 # Atualizar na tabela wp_options (siteurl e home)
 echo "Atualizando wp_options (siteurl e home)..."
+echo "Domínio atual: $CURRENT_URL"
+echo "Domínio de destino: $TARGET_URL"
+echo "Env: $ENVIRONMENT"
 
 mysql -h "$WORDPRESS_DB_HOST" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" "$WORDPRESS_DB_NAME" -e \
     "UPDATE wp_options SET option_value = '$TARGET_URL' WHERE option_name IN ('siteurl', 'home');"
@@ -94,8 +101,6 @@ fi
 
 # Verifica se o WP-CLI está instalado e atualiza os permalinks
 if command -v wp &> /dev/null; then
-echo "Atualizando URLS..."
-  wp search-replace 'http://54.207.73.19:8000/' "$TARGET_URL" --allow-root
   echo "Atualizando os permalinks..."
   wp option update permalink_structure '/%year%/%monthnum%/%day%/%postname%/' --allow-root
   wp option update permalink_structure '/%postname%/' --allow-root

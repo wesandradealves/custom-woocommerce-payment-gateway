@@ -33,6 +33,8 @@
             this.state.settings = bdm_checkout_data?.settings;
             this.state.products = bdm_checkout_data?.products;
 
+            console.log(bdm_checkout_data);
+
             if (!this.state.settings || !this.state.products) {
                 console.error("[BDM Checkout] Missing configuration data.");
                 return;
@@ -63,7 +65,7 @@
         handleCheckout: async function () {
             const totalPrice = this.calculateTotalPrice(this.state.products);
 
-            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(6)); 
+            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(2)); 
 
             UI.updateCheckoutUIBefore(totalPrice, amount);
 
@@ -128,8 +130,6 @@
         },
 
         updateUIAfterBillingCode: function (data) {
-            console.log(data);
-            
             UI.hideLoading();
             $("#step-1, #step-2").toggleClass("d-flex d-none");
             UI.setHTML("#billingcode", data.billingCode);
