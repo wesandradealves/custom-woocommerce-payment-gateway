@@ -140,7 +140,7 @@ function bdm_enqueue_scripts() {
     if (is_checkout() || is_page('bdm-checkout')) {
         wp_enqueue_style(
             'bdm-checkout-style',
-            plugin_dir_url(__FILE__) . 'assets/css/style.css',
+            plugin_dir_url(__FILE__) . 'assets/css/style.min.css',
             array(),
             '1.0.0', 
             'all' 

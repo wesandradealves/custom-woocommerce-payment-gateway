@@ -265,7 +265,6 @@
         },
     };
 
-    // Helpers
     const UI = {
         showLoading: () => $(".loading").removeClass("d-none").addClass("d-flex"),
         hideLoading: () => $(".loading").removeClass("d-flex").addClass("d-none"),
