@@ -132,6 +132,7 @@ function bdm_get_api_endpoint($sandbox) {
         ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
         : 'https://partner.dourado.cash/';
 }
+
 function bdm_enqueue_scripts() {
     if (!class_exists('WooCommerce')) {
         return;
@@ -196,7 +197,7 @@ function bdm_enqueue_scripts() {
                 'partner_email' => $settings['partner_email'] ?? '',
                 'sandbox' => $settings['sandbox'] ?? '',
                 'consumer_key' => $settings['rest_key'] ?? '',
-                'endpoint_quotation' => 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/ecommerce-partner/clients/quotation/all',
+                'endpoint_quotation' => bdm_get_api_endpoint($settings['sandbox']) . 'ecommerce-partner/clients/quotation/all',
                 'consumer_secret' => $settings['rest_secret'] ?? ''
             )
         );
