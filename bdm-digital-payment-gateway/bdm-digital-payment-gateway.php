@@ -3,7 +3,7 @@
  * Plugin Name: BDM Digital Payment Gateway
  * Plugin URI: https://mercado.dourado.cash/
  * Description: Um plugin para processar pagamentos utilizando BDM Digital. Suporta geração de QR codes, processamento de pagamentos, validação de transações e fornecimento de confirmações. Permite integração com várias carteiras e serviços associados.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: Dourado Cash
  * Author URI: https://mercado.dourado.cash/
 */
@@ -140,7 +140,7 @@ function bdm_enqueue_scripts() {
     if (is_checkout() || is_page('bdm-checkout')) {
         wp_enqueue_style(
             'bdm-checkout-style',
-            plugin_dir_url(__FILE__) . 'assets/css/style.css',
+            plugin_dir_url(__FILE__) . 'assets/css/style.min.css',
             array(),
             '1.0.0', 
             'all' 
