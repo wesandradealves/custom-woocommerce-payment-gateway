@@ -130,7 +130,7 @@ add_action('admin_enqueue_scripts', function ($hook) {
 function bdm_get_api_endpoint($sandbox) {
     return $sandbox && $sandbox !== "no"
         ? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
-        : 'https://piyzov0kjl.execute-api.sa-east-1.amazonaws.com/';
+        : 'https://partner.dourado.cash/';
 }
 function bdm_enqueue_scripts() {
     if (!class_exists('WooCommerce')) {
