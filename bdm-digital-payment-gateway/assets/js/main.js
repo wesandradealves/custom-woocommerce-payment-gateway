@@ -63,7 +63,7 @@
         handleCheckout: async function () {
             const totalPrice = this.calculateTotalPrice(this.state.products);
 
-            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(6)); 
+            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(2)); 
 
             UI.updateCheckoutUIBefore(totalPrice, amount);
 
@@ -128,8 +128,6 @@
         },
 
         updateUIAfterBillingCode: function (data) {
-            console.log(data);
-            
             UI.hideLoading();
             $("#step-1, #step-2").toggleClass("d-flex d-none");
             UI.setHTML("#billingcode", data.billingCode);
