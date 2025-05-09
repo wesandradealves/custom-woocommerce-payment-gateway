@@ -198,7 +198,9 @@ function bdm_enqueue_scripts() {
                 'sandbox' => $settings['sandbox'] ?? '',
                 'consumer_key' => $settings['rest_key'] ?? '',
                 'endpoint_quotation' => bdm_get_api_endpoint($settings['sandbox']) . 'ecommerce-partner/clients/quotation/all',
-                'consumer_secret' => $settings['rest_secret'] ?? ''
+                'consumer_secret' => $settings['rest_secret'] ?? '',
+                'site_url' => get_bloginfo('url'), 
+                'site_name' => get_bloginfo('name')
             )
         );
 
