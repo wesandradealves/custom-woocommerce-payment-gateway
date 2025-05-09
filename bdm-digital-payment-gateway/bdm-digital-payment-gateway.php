@@ -3,9 +3,11 @@
  * Plugin Name: BDM Digital Payment Gateway
  * Plugin URI: https://mercado.dourado.cash/
  * Description: Um plugin para processar pagamentos utilizando BDM Digital. Suporta geração de QR codes, processamento de pagamentos, validação de transações e fornecimento de confirmações. Permite integração com várias carteiras e serviços associados.
- * Version: 1.1.9
+ * Version: 1.2.0
  * Author: Dourado Cash
  * Author URI: https://mercado.dourado.cash/
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
 
 if (!defined('ABSPATH')) {
@@ -16,20 +18,13 @@ if (!class_exists('WP_REST_Response')) {
     require_once ABSPATH . 'wp-includes/rest-api.php';
 }
 
-$storefront_theme = wp_get_theme('storefront');
-
-if ($storefront_theme->exists()) {
-    switch_theme('storefront');
-} 
-
-register_activation_hook(__FILE__, 'init');
-function init() {
+register_activation_hook(__FILE__, 'bdm_activate_plugin');
+function bdm_activate_plugin() {
     if (!is_plugin_active('woocommerce/woocommerce.php')) {
         deactivate_plugins(plugin_basename(__FILE__));
-
         wp_die(
-            __('BDM Digital Payment Gateway requer que o WooCommerce esteja instalado e ativado.', 'bdm-digital-payment-gateway'),
-            __('Plugin Activation Error', 'bdm-digital-payment-gateway'),
+            esc_html__('BDM Digital Payment Gateway requer WooCommerce.', 'bdm-digital-payment-gateway'),
+            esc_html__('Plugin Activation Error', 'bdm-digital-payment-gateway'),
             ['back_link' => true]
         );
     } else {
@@ -110,11 +105,12 @@ function bdm_load_custom_template($template) {
     return $template;
 }
 
-add_filter( 'woocommerce_payment_gateways', 'add_gateway' );
-function add_gateway( $gateways ) {
-	$gateways[] = 'WC_BDM_GATEWAY'; 
-	return $gateways;
+add_filter('woocommerce_payment_gateways', 'bdm_register_gateway_class');
+function bdm_register_gateway_class($gateways) {
+    $gateways[] = 'WC_BDM_GATEWAY';
+    return $gateways;
 }
+
 
 add_action('admin_enqueue_scripts', function ($hook) {
     if ($hook === 'woocommerce_page_wc-orders') {
@@ -139,45 +135,42 @@ function bdm_enqueue_scripts() {
     }
 
     if (is_checkout() || is_page('bdm-checkout')) {
+        $plugin_url = (function_exists('plugins_url')) ? plugins_url('', __FILE__) : '';
         wp_enqueue_style(
             'bdm-checkout-style',
-            plugin_dir_url(__FILE__) . 'assets/css/style.min.css',
+            $plugin_url . '/assets/css/style.min.css',
             array(),
-            '1.0.0', 
-            'all' 
+            '1.0.0',
+            'all'
         );
-
         wp_enqueue_style(
             'bootstrap',
-            'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css',
-            array(), 
-            '1.0.0',
-            'all' 
-        );        
-
+            $plugin_url . '/assets/css/bootstrap.min.css',
+            array(),
+            '5.3.3',
+            'all'
+        );
         wp_enqueue_script(
             'bdm-checkout-js',
-            plugin_dir_url(__FILE__) . 'assets/js/main.js',
+            $plugin_url . '/assets/js/main.js',
             array('jquery'),
             filemtime(plugin_dir_path(__FILE__) . 'assets/js/main.js'),
             true
         );
-
         wp_enqueue_script(
             'toast-js',
-            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.js',
+            $plugin_url . '/assets/js/jquery.toast.min.js',
             array('jquery'),
             '1.3.2',
             true
         );
-
         wp_enqueue_style(
             'toast-css',
-            '//cdnjs.cloudflare.com/ajax/libs/jquery-toast-plugin/1.3.2/jquery.toast.min.css',
+            $plugin_url . '/assets/css/jquery.toast.min.css',
             array(),
-            '1.0.0', 
-            'all' 
-        );        
+            '1.3.2',
+            'all'
+        );
 
         $settings = get_option('woocommerce_bdm-digital_settings'); 
 
@@ -204,7 +197,9 @@ function bdm_enqueue_scripts() {
             )
         );
 
-        wp_localize_script('bdm-checkout-js', 'bdm_checkout_data', $checkout_data);
+        wp_localize_script('bdm-checkout-js', 'bdm_checkout_data', array_merge($checkout_data, [
+            'nonce' => wp_create_nonce('bdm_create_order_nonce')
+        ]));
     }
 }
 add_action('wp_enqueue_scripts', 'bdm_enqueue_scripts');
@@ -212,14 +207,17 @@ add_action('wp_ajax_create_bdm_order', 'create_bdm_order');
 add_action('wp_ajax_nopriv_create_bdm_order', 'create_bdm_order'); 
 
 function create_bdm_order() {
-    if (!isset($_POST['billing_code'], $_POST['amount'], $_POST['partner_email'], $_POST['products'])) {
-        wp_send_json_error(['message' => 'Missing required parameters.']);
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'bdm_create_order_nonce')) {
+        wp_send_json_error(['message' => 'Nonce verification failed.']);
     }
-
-    $billing_code = sanitize_text_field($_POST['billing_code']);
-    $amount = floatval($_POST['amount']);
-    $partner_email = sanitize_email($_POST['partner_email']);
-    $products = $_POST['products']; 
+    $billing_code = isset($_POST['billing_code']) ? sanitize_text_field(wp_unslash($_POST['billing_code'])) : '';
+    $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+    $partner_email = isset($_POST['partner_email']) ? sanitize_email(wp_unslash($_POST['partner_email'])) : '';
+    $products = isset($_POST['products']) ? json_decode(sanitize_text_field(wp_unslash($_POST['products'])), true) : [];
+    if (!is_array($products)) {
+        wp_send_json_error(['message' => 'Invalid products data.']);
+    }
 
     $order = wc_create_order();
 
@@ -292,94 +290,97 @@ function bdm_update_payment_status($request) {
     return new WP_REST_Response(['message' => 'Order updated'], 200);
 }
 
-add_action('plugins_loaded', 'init_gateway_class');
-function init_gateway_class() {
+add_action('plugins_loaded', 'bdm_init_gateway_class');
+function bdm_init_gateway_class() {
+    if (!class_exists('WC_Payment_Gateway')) return; 
+
     class WC_BDM_GATEWAY extends WC_Payment_Gateway {
-        private $api_key;
-        private $endpoint;
-        private $partner_email;
-        private $sandbox;
-        private $asset;
-        private $rest_key;
-        private $rest_secret;
+        public $api_key;
+        public $endpoint;
+        public $partner_email;
+        public $sandbox;
+        public $asset;
+        public $rest_key;
+        public $rest_secret;
 
         public function __construct() {
-            $this->id = 'bdm-digital';
-            $this->method_title = __('BDM Digital', 'woocommerce');
-            $this->method_description = __('Accept payments via BDM Digital.', 'woocommerce');
-            $this->supports = array('products');
-        
+            $this->id                 = 'bdm-digital';
+            $this->method_title       = __('BDM Digital', 'bdm-digital-payment-gateway');
+            $this->method_description = __('Accept payments via BDM Digital.', 'bdm-digital-payment-gateway');
+            $this->supports           = array('products');
+
             $this->init_form_fields();
             $this->init_settings();
-        
-            $this->title = $this->get_option('title');
-            $this->api_key = $this->get_option('api_key');
-            $this->partner_email = $this->get_option('partner_email');
-            $this->sandbox = $this->get_option('sandbox') === 'no';
-            $this->asset = $this->get_option('asset') === 'BDM';
-            $this->rest_key = $this->get_option('rest_key');
-            $this->rest_secret = $this->get_option('rest_secret');
-        
-            $this->endpoint = bdm_get_api_endpoint($this->sandbox);
-        
-            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+
+            $this->title          = $this->get_option('title');
+            $this->api_key        = $this->get_option('api_key');
+            $this->partner_email  = $this->get_option('partner_email');
+            $this->sandbox        = $this->get_option('sandbox') === 'yes';
+            $this->asset          = $this->get_option('asset');
+            $this->rest_key       = $this->get_option('rest_key');
+            $this->rest_secret    = $this->get_option('rest_secret');
+
+            $this->endpoint       = bdm_get_api_endpoint($this->sandbox);
+
+            add_action(
+                'woocommerce_update_options_payment_gateways_' . $this->id,
+                array($this, 'process_admin_options')
+            );
         }
 
         public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array(
-                    'title' => __('Enable/Disable', 'woocommerce'),
-                    'type' => 'checkbox',
-                    'label' => __('Enable BDM Digital Payment', 'woocommerce'),
-                    'default' => ''
+                    'title'   => __('Enable/Disable', 'bdm-digital-payment-gateway'),
+                    'type'    => 'checkbox',
+                    'label'   => __('Enable BDM Digital Payment', 'bdm-digital-payment-gateway'),
+                    'default' => 'no'
                 ),
                 'title' => array(
-                    'title' => __('Title', 'woocommerce'),
-                    'type' => 'text',
-                    'default' => $this->method_title,
+                    'title'   => __('Title', 'bdm-digital-payment-gateway'),
+                    'type'    => 'text',
+                    'default' => __('BDM Digital Payment', 'bdm-digital-payment-gateway'),
                 ),   
-                'method_description' => array(
-                    'title' => __('Description', 'woocommerce'),
-                    'type' => 'textarea',
-                    'default' => $this->method_description,
-                ),             
                 'api_key' => array(
-                    'title' => __('API Key', 'woocommerce'),
-                    'type' => 'text',
-                    'description' => __('Enter your API Key', 'woocommerce'),
-                    'default' => $this->get_option('api_key') ?? '',
+                    'title'       => __('API Key', 'bdm-digital-payment-gateway'),
+                    'type'        => 'text',
+                    'description' => __('Enter your API Key', 'bdm-digital-payment-gateway'),
+                    'default'     => '',
                 ),
                 'partner_email' => array(
-                    'title' => __('Partner Email', 'woocommerce'),
-                    'type' => 'text',
-                    'description' => __('Enter your partner email', 'woocommerce'),
-                    'default' => $this->get_option('partner_email') ?? '',
+                    'title'       => __('Partner Email', 'bdm-digital-payment-gateway'),
+                    'type'        => 'email',
+                    'description' => __('Enter your partner email', 'bdm-digital-payment-gateway'),
+                    'default'     => '',
                 ),
                 'asset' => array(
-                    'title' => __('Asset', 'woocommerce'),
-                    'type' => 'text',
-                    'default' => $this->get_option('asset') ?? ''
+                    'title'   => __('Asset', 'bdm-digital-payment-gateway'),
+                    'type'    => 'text',
+                    'default' => 'BDM'
                 ),  
                 'sandbox' => array(
-                    'title' => __('Sandbox Mode', 'woocommerce'),
-                    'type' => 'checkbox',
-                    'label' => __('Enable Sandbox Mode', 'woocommerce'),
-                    'default' => $this->get_option('sandbox') ?? '',
-                    'description' => __('Use the sandbox API endpoint for testing.', 'woocommerce'),
+                    'title'       => __('Sandbox Mode', 'bdm-digital-payment-gateway'),
+                    'type'        => 'checkbox',
+                    'label'       => __('Enable Sandbox Mode', 'bdm-digital-payment-gateway'),
+                    'default'     => 'no',
+                    'description' => __('Use the sandbox API endpoint for testing.', 'bdm-digital-payment-gateway'),
                 ),  
                 'rest_key' => array(
-                    'title' => __('Rest API Key', 'woocommerce'),
-                    'type' => 'text',
-                    'label' => __('Rest API Key', 'woocommerce'),
-                    'default' => $this->get_option('rest_key') ?? ''
+                    'title'   => __('REST API Key', 'bdm-digital-payment-gateway'),
+                    'type'    => 'text',
+                    'default' => ''
                 ),  
                 'rest_secret' => array(
-                    'title' => __('Rest API Secret', 'woocommerce'),
-                    'type' => 'text',
-                    'label' => __('Rest API Secret', 'woocommerce'),
-                    'default' => $this->get_option('rest_secret') ?? ''
+                    'title'   => __('REST API Secret', 'bdm-digital-payment-gateway'),
+                    'type'    => 'text',
+                    'default' => ''
                 )
             );
         }
     }
+}
+
+add_action('plugins_loaded', 'bdm_load_plugin_textdomain');
+function bdm_load_plugin_textdomain() {
+    load_plugin_textdomain('bdm-digital-payment-gateway', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 }

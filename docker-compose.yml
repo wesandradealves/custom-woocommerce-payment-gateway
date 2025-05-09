@@ -12,6 +12,7 @@ services:
     volumes:
       - wordpress_data:/var/www/html
       - ./bdm-digital-payment-gateway:/var/www/html/wp-content/plugins/bdm-digital-payment-gateway
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
 
   mysql:
     image: mariadb:latest

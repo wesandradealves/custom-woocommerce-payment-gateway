@@ -137,28 +137,39 @@
 
         createWooCommerceOrder: function (amount) {
             const { partner_email } = this.state.settings;
-
+            const nonce = bdm_checkout_data && bdm_checkout_data.nonce;
+            if (!nonce) {
+                console.error("[BDM Checkout] Nonce ausente. Não é possível criar o pedido.");
+                Toast.error("Erro de segurança: nonce ausente. Recarregue a página.");
+                return Promise.reject("Nonce ausente");
+            }
+            console.log("[BDM Checkout] Enviando nonce:", nonce);
             return new Promise((resolve, reject) => {
                 $.post("/wp-admin/admin-ajax.php", {
                     action: "create_bdm_order",
                     billing_code: sessionStorage.getItem("billingcode"),
                     amount: amount,
                     partner_email: partner_email,
-                    products: this.state.products,
+                    products: JSON.stringify(this.state.products), 
+                    nonce: nonce
                 })
                     .done((response) => {
+                        console.log("[BDM Checkout] Resposta AJAX:", response);
                         if (response.success) {
                             sessionStorage.setItem("order_id", response.data.order_id);
                             this.startCountdown(5);
                             this.startStatusInterval();
                             resolve(response);
                         } else {
-                            console.error("Error creating WooCommerce order:", response.message);
-                            reject(response.message); 
+                            const msg = response.message || "Erro desconhecido ao criar pedido.";
+                            console.error("Error creating WooCommerce order:", msg);
+                            Toast.error(msg);
+                            reject(msg); 
                         }
                     })
                     .fail((err) => {
                         console.error("Error creating WooCommerce order:", err);
+                        Toast.error("Erro de comunicação com o servidor.");
                         reject(err);
                     });
             });
@@ -250,7 +261,6 @@
                         console.error(err);
                     });
             } else {
-                // Fallback
                 const tempInput = document.createElement("input");
                 tempInput.value = code;
                 document.body.appendChild(tempInput);

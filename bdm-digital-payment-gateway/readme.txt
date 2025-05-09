@@ -2,14 +2,14 @@
 Contributors: douradocash  
 Tags: pagamentos, pix, qr code, woocommerce, bdm  
 Requires at least: 5.0  
-Tested up to: 6.5  
+Tested up to: 6.8  
 Requires PHP: 7.4  
-Stable tag: 1.0.0  
-Version: 1.1.9
+Stable tag: 1.2.0  
+Version: 1.2.0
 License: GPLv2 or later  
 License URI: https://www.gnu.org/licenses/gpl-2.0.html  
 
-Um plugin para processar pagamentos com BDM Digital via WooCommerce. Suporta geração de QR Codes, validação de transações e integração com carteiras digitais.
+Aceite pagamentos BDM Digital no WooCommerce com QR Code, validação automática e integração fácil.  
 
 == Description ==
 
