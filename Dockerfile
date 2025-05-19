@@ -28,6 +28,15 @@ RUN apt-get update && apt-get install -y \
 ENV COMPOSER_ROOT_VERSION=6.7.2
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+# Install PHP CodeSniffer and WordPress Coding Standards
+RUN composer global require "squizlabs/php_codesniffer:*" && \
+    composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true && \
+    composer global require "wp-coding-standards/wpcs:*" && \
+    ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs && \
+    ~/.composer/vendor/bin/phpcs --config-set default_standard WordPress && \
+    ln -sf ~/.composer/vendor/bin/phpcs /usr/local/bin/phpcs && \
+    ln -sf ~/.composer/vendor/bin/phpcbf /usr/local/bin/phpcbf
+
 # WP-CLI
 RUN curl -sS https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
