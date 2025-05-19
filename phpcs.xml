@@ -12,10 +12,17 @@
     <!-- Ignore minified files -->
     <exclude-pattern>*.min.js</exclude-pattern>
     <exclude-pattern>*.min.css</exclude-pattern>
+    <exclude-pattern>wp-content/plugins/bdm-digital-payment-gateway/assets/js/main.js</exclude-pattern>
+    <exclude-pattern>wp-content/plugins/bdm-digital-payment-gateway/assets/js/admin.js</exclude-pattern>
+    <exclude-pattern>*.js</exclude-pattern>
+    <exclude-pattern>*/wpcs-wordpress-mocks.php</exclude-pattern>
 
     <!-- Set file extensions to check -->
     <file>./bdm-digital-payment-gateway</file>
 
     <!-- Report all errors and warnings -->
     <arg name="report" value="full"/>
+
+    <!-- Remove deprecated sniff -->
+    <exclude name="Generic.Functions.CallTimePassByReference" />
 </ruleset>

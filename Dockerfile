@@ -28,14 +28,33 @@ RUN apt-get update && apt-get install -y \
 ENV COMPOSER_ROOT_VERSION=6.7.2
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install PHP CodeSniffer and WordPress Coding Standards
-RUN composer global require "squizlabs/php_codesniffer:*" && \
-    composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true && \
-    composer global require "wp-coding-standards/wpcs:*" && \
+# Limpar sniffs antigos e configurações antes de instalar o PHPCS/WPCS
+RUN composer global remove phpcsstandards/phpcsextra phpcsstandards/phpcsutils dealerdirect/phpcodesniffer-composer-installer || true && \
+    rm -rf ~/.composer/vendor/phpcsstandards || true && \
+    rm -rf ~/.composer/vendor/modernize || true && \
+    rm -rf ~/.composer/vendor/normalizedarrays || true && \
+    rm -rf ~/.composer/vendor/universal || true && \
+    ~/.composer/vendor/bin/phpcs --config-delete installed_paths || true
+
+# Permitir o plugin do Composer antes de instalar as dependências
+RUN composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true && \
+    composer global require "squizlabs/php_codesniffer:*" \
+    "wp-coding-standards/wpcs:*" \
+    "phpcsstandards/phpcsutils:*" \
+    "phpcsstandards/phpcsextra:*" \
+    "dealerdirect/phpcodesniffer-composer-installer:*" && \
     ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs && \
     ~/.composer/vendor/bin/phpcs --config-set default_standard WordPress && \
     ln -sf ~/.composer/vendor/bin/phpcs /usr/local/bin/phpcs && \
     ln -sf ~/.composer/vendor/bin/phpcbf /usr/local/bin/phpcbf
+
+# Verificar e listar os sniffs instalados após configurar o caminho
+RUN ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/wp-coding-standards/wpcs && \
+    ~/.composer/vendor/bin/phpcs -i
+
+# Verificar configuração do PHPCS e listar sniffs disponíveis
+RUN ~/.composer/vendor/bin/phpcs --config-show && \
+    ~/.composer/vendor/bin/phpcs -i
 
 # WP-CLI
 RUN curl -sS https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp \
@@ -57,16 +76,26 @@ RUN composer require vlucas/phpdotenv && \
     composer config --global allow-plugins.johnpbloch/wordpress-core-installer true && \
     composer install --no-dev --optimize-autoloader
 
-# Plugins e temas
+# Copy only the plugin to be fixed and phpcs.xml first
 COPY ./bdm-digital-payment-gateway ./wp-content/plugins/bdm-digital-payment-gateway
+COPY phpcs.xml ./
+COPY ./bdm-digital-payment-gateway/wpcs-wordpress-mocks.php ./wp-content/plugins/bdm-digital-payment-gateway/wpcs-wordpress-mocks.php
+
+# Corrigir automaticamente o código do plugin conforme o padrão WordPress
+WORKDIR /var/www/html
+
+# Reinstalar dependências e listar sniffs disponíveis
+RUN composer global update && \
+    ~/.composer/vendor/bin/phpcs -i
+
+# Executar PHPCS com bootstrap dos mocks
+RUN ~/.composer/vendor/bin/phpcs --standard=phpcs.xml --bootstrap=wp-content/plugins/bdm-digital-payment-gateway/wpcs-wordpress-mocks.php wp-content/plugins/bdm-digital-payment-gateway/
+
+# Now copy in the rest of the plugins and themes
 COPY ./woocommerce ./wp-content/plugins/woocommerce
 COPY ./storefront ./wp-content/themes/storefront
 COPY ./classic-editor ./wp-content/plugins/classic-editor
 COPY ./plugin-check ./wp-content/plugins/plugin-check
-
-# Build SCSS do plugin
-#WORKDIR /var/www/html/wp-content/plugins/bdm-digital-payment-gateway
-#RUN npm install && npm run build
 
 # Permissões e limpeza
 WORKDIR /var/www/html
@@ -105,6 +134,13 @@ RUN dos2unix /usr/local/bin/init-db.sh && chmod +x /usr/local/bin/init-db.sh
 # Configuração Apache
 COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
+
+# Remover sniffs extras de vendors de plugins
+RUN rm -rf /var/www/html/wp-content/plugins/plugin-check/vendor/phpcsstandards || true && \
+    rm -rf /var/www/html/wp-content/plugins/woocommerce/vendor/phpcsstandards || true
+
+# Corrigir automaticamente o código do plugin conforme o padrão WordPress
+WORKDIR /var/www/html
 
 EXPOSE 80
 
