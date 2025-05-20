@@ -155,15 +155,15 @@ function bdm_load_custom_template( $template ) {
 	return $template;
 }
 
-add_filter( 'woocommerce_payment_gateways', 'bdm_register_gateway_class' );
+add_filter( 'woocommerce_payment_gateways', 'bdmdipag_register_gateway_class' );
 /**
  * Registra a classe do gateway BDM no WooCommerce.
  *
  * @param array $gateways Gateways existentes.
  * @return array Gateways modificados.
  */
-function bdm_register_gateway_class( $gateways ) {
-	$gateways[] = 'WC_BDM_GATEWAY';
+function bdmdipag_register_gateway_class( $gateways ) {
+	$gateways[] = 'BDMDIPAG_Gateway';
 	return $gateways;
 }
 
@@ -283,15 +283,15 @@ function bdm_enqueue_scripts() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'bdm_enqueue_scripts' );
-add_action( 'wp_ajax_create_bdm_order', 'create_bdm_order' );
-add_action( 'wp_ajax_nopriv_create_bdm_order', 'create_bdm_order' );
+add_action( 'wp_ajax_bdmdipag_create_order', 'bdmdipag_create_order' );
+add_action( 'wp_ajax_nopriv_bdmdipag_create_order', 'bdmdipag_create_order' );
 
 /**
  * Lida com a criação de pedidos BDM via AJAX.
  *
  * @return void
  */
-function create_bdm_order() {
+function bdmdipag_create_order() {
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bdm_create_order_nonce' ) ) {
 		wp_send_json_error( array( 'message' => 'Nonce verification failed.' ) );
@@ -338,7 +338,9 @@ add_action(
 			array(
 				'methods'             => 'POST',
 				'callback'            => 'bdm_update_payment_status',
-				'permission_callback' => '__return_true',
+				'permission_callback' => function () {
+					return is_user_logged_in();
+				},
 			)
 		);
 	}
@@ -398,7 +400,7 @@ function bdm_init_gateway_class() {
 	/**
 	 * Classe do gateway BDM Digital.
 	 */
-	class WC_BDM_GATEWAY extends WC_Payment_Gateway {
+	class BDMDIPAG_Gateway extends WC_Payment_Gateway {
 		/**
 		 * API Key utilizada para autenticação.
 		 *
@@ -525,14 +527,4 @@ function bdm_init_gateway_class() {
 			);
 		}
 	}
-}
-
-add_action( 'plugins_loaded', 'bdm_load_plugin_textdomain' );
-/**
- * Carrega o textdomain do plugin para traduções.
- *
- * @return void
- */
-function bdm_load_plugin_textdomain() {
-	load_plugin_textdomain( 'bdm-digital-payment-gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 }

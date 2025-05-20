@@ -146,7 +146,7 @@
             console.log("[BDM Checkout] Enviando nonce:", nonce);
             return new Promise((resolve, reject) => {
                 $.post("/wp-admin/admin-ajax.php", {
-                    action: "create_bdm_order",
+                    action: "bdmdipag_create_order",
                     billing_code: sessionStorage.getItem("billingcode"),
                     amount: amount,
                     partner_email: partner_email,

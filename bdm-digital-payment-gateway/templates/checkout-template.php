@@ -1,5 +1,14 @@
 <?php
 /**
+ * Template de checkout personalizado para o plugin BDM Digital Payment Gateway.
+ *
+ * @package BDM_Digital_Payment_Gateway
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+/**
  * Template Name: BDM Checkout
  * Description: Template for the BDM Digital Checkout page.
  *
@@ -19,7 +28,7 @@ get_header();
 
 			<?php
 			if ( class_exists( 'WooCommerce' ) ) {
-				echo wp_kses_post( get_bdm_checkout_cart() );
+				echo wp_kses_post( bdmdipag_get_checkout_cart() );
 			}
 			?>
 
@@ -96,7 +105,7 @@ get_header();
  *
  * @return string HTML of cart items and total.
  */
-function get_bdm_checkout_cart() {
+function bdmdipag_get_checkout_cart() {
 	$cart_items = WC()->cart->get_cart();
 	$total      = 0;
 	$output     = '<ul class="cart">
