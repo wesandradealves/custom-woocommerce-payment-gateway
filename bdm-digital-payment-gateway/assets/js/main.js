@@ -2,6 +2,7 @@
     const BDM = {
         config: {
             checkInterval: 15000,
+            countdown: 5
         },
 
         state: {
@@ -30,8 +31,8 @@
         },
 
         init: async function () {
-            this.state.settings = bdm_checkout_data?.settings;
-            this.state.products = bdm_checkout_data?.products;
+            this.state.settings = bdmdipag_checkout_data?.settings;
+            this.state.products = bdmdipag_checkout_data?.products;
 
             if (!this.state.settings || !this.state.products) {
                 console.error("[BDM Checkout] Missing configuration data.");
@@ -44,8 +45,8 @@
         },
 
         clearLocalStorage: function () {
-            localStorage.removeItem("order_id");
-            localStorage.removeItem("billingcode");
+            sessionStorage.removeItem("order_id");
+            sessionStorage.removeItem("billingcode");
         },
 
         bindEvents: function () {
@@ -63,15 +64,15 @@
         handleCheckout: async function () {
             const totalPrice = this.calculateTotalPrice(this.state.products);
 
-            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(6)); 
+            const amount = parseFloat((totalPrice / this.state.cotation).toFixed(2)); 
 
             UI.updateCheckoutUIBefore(totalPrice, amount);
 
             try {
-                const billingData = await this.requestBillingCode(amount);
+                const order = await this.createWooCommerceOrder(amount); 
+                const billingData = await this.requestBillingCode(amount, order.data.order_id);
                 if (billingData?.billingCode) {
                     this.updateUIAfterBillingCode(billingData);
-                    this.createWooCommerceOrder(amount);
                 } else {
                     Toast.error("Failed to generate payment code.");
                 }
@@ -109,7 +110,7 @@
             }, {});
         },
 
-        requestBillingCode: async function (amount) {
+        requestBillingCode: async function (amount, orderId) {
             const { endpoint, api_key, partner_email, asset } = this.state.settings;
 
             const response = await fetch(`${endpoint}ecommerce-partner/billing-code`, {
@@ -119,7 +120,7 @@
                     partnerEmail: partner_email,
                     amount: amount,
                     toAsset: asset,
-                    attachment: "Teste",
+                    attachment: `Pedido #${orderId}`,
                     fromAsset: asset,
                 }),
             });
@@ -128,38 +129,51 @@
         },
 
         updateUIAfterBillingCode: function (data) {
-            console.log(data);
-            
             UI.hideLoading();
             $("#step-1, #step-2").toggleClass("d-flex d-none");
             UI.setHTML("#billingcode", data.billingCode);
             $("#qrcode").html(`<img src="${data.qrCode}" alt="QR Code" />`);
-            localStorage.setItem("billingcode", data.billingCode);
+            sessionStorage.setItem("billingcode", data.billingCode);
         },
 
         createWooCommerceOrder: function (amount) {
             const { partner_email } = this.state.settings;
-
-            $.post("/wp-admin/admin-ajax.php", {
-                action: "create_bdm_order",
-                billing_code: localStorage.getItem("billingcode"),
-                amount: amount,
-                partner_email: partner_email,
-                products: this.state.products,
-            })
-                .done((response) => {
-                    if (response.success) {
-                        console.log("✅ WooCommerce order created successfully!");
-                        localStorage.setItem("order_id", response.data.order_id);
-                        this.startCountdown(5);
-                        this.startStatusInterval();
-                    } else {
-                        console.error("Error creating WooCommerce order:", response.message);
-                    }
+            const nonce = bdmdipag_checkout_data && bdmdipag_checkout_data.nonce;
+            if (!nonce) {
+                console.error("[BDM Checkout] Nonce ausente. Não é possível criar o pedido.");
+                Toast.error("Erro de segurança: nonce ausente. Recarregue a página.");
+                return Promise.reject("Nonce ausente");
+            }
+            console.log("[BDM Checkout] Enviando nonce:", nonce);
+            return new Promise((resolve, reject) => {
+                $.post("/wp-admin/admin-ajax.php", {
+                    action: "bdmdipag_create_order",
+                    billing_code: sessionStorage.getItem("billingcode"),
+                    amount: amount,
+                    partner_email: partner_email,
+                    products: JSON.stringify(this.state.products), 
+                    nonce: nonce
                 })
-                .fail((err) => {
-                    console.error("Error creating WooCommerce order:", err);
-                });
+                    .done((response) => {
+                        console.log("[BDM Checkout] Resposta AJAX:", response);
+                        if (response.success) {
+                            sessionStorage.setItem("order_id", response.data.order_id);
+                            this.startCountdown(this.config.countdown);
+                            this.startStatusInterval();
+                            resolve(response);
+                        } else {
+                            const msg = response.message || "Erro desconhecido ao criar pedido.";
+                            console.error("Error creating WooCommerce order:", msg);
+                            Toast.error(msg);
+                            reject(msg); 
+                        }
+                    })
+                    .fail((err) => {
+                        console.error("Error creating WooCommerce order:", err);
+                        Toast.error("Erro de comunicação com o servidor.");
+                        reject(err);
+                    });
+            });
         },
 
         startCountdown: function (minutes) {
@@ -193,7 +207,7 @@
 
         checkPaymentStatus: async function () {
             const { endpoint, api_key, partner_email } = this.state.settings;
-            const billingcode = localStorage.getItem("billingcode");
+            const billingcode = sessionStorage.getItem("billingcode");
 
             try {
                 const response = await fetch(
@@ -209,7 +223,7 @@
                 if (data?.status === "COMPLETED") {
                     clearInterval(this.state.intervalId);
                     Toast.success("Payment confirmed!");
-                    this.updateOrderStatus(localStorage.getItem("order_id"), data.status);
+                    this.updateOrderStatus(sessionStorage.getItem("order_id"), data.status);
 
                     setTimeout(() => {
                         location.reload(); 
@@ -222,7 +236,7 @@
 
         updateOrderStatus: async function (orderId, status) {
             try {
-                await fetch("/wp-json/store/v1/update-payment", {
+                await fetch("/wp-json/bdmdipag/v1/update-payment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -248,7 +262,6 @@
                         console.error(err);
                     });
             } else {
-                // Fallback
                 const tempInput = document.createElement("input");
                 tempInput.value = code;
                 document.body.appendChild(tempInput);
@@ -265,7 +278,6 @@
         },
     };
 
-    // Helpers
     const UI = {
         showLoading: () => $(".loading").removeClass("d-none").addClass("d-flex"),
         hideLoading: () => $(".loading").removeClass("d-flex").addClass("d-none"),
