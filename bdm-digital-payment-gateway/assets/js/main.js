@@ -2,6 +2,7 @@
     const BDM = {
         config: {
             checkInterval: 15000,
+            countdown: 5
         },
 
         state: {
@@ -30,8 +31,8 @@
         },
 
         init: async function () {
-            this.state.settings = bdm_checkout_data?.settings;
-            this.state.products = bdm_checkout_data?.products;
+            this.state.settings = bdmdipag_checkout_data?.settings;
+            this.state.products = bdmdipag_checkout_data?.products;
 
             if (!this.state.settings || !this.state.products) {
                 console.error("[BDM Checkout] Missing configuration data.");
@@ -137,7 +138,7 @@
 
         createWooCommerceOrder: function (amount) {
             const { partner_email } = this.state.settings;
-            const nonce = bdm_checkout_data && bdm_checkout_data.nonce;
+            const nonce = bdmdipag_checkout_data && bdmdipag_checkout_data.nonce;
             if (!nonce) {
                 console.error("[BDM Checkout] Nonce ausente. Não é possível criar o pedido.");
                 Toast.error("Erro de segurança: nonce ausente. Recarregue a página.");
@@ -157,7 +158,7 @@
                         console.log("[BDM Checkout] Resposta AJAX:", response);
                         if (response.success) {
                             sessionStorage.setItem("order_id", response.data.order_id);
-                            this.startCountdown(5);
+                            this.startCountdown(this.config.countdown);
                             this.startStatusInterval();
                             resolve(response);
                         } else {
@@ -235,7 +236,7 @@
 
         updateOrderStatus: async function (orderId, status) {
             try {
-                await fetch("/wp-json/store/v1/update-payment", {
+                await fetch("/wp-json/bdmdipag/v1/update-payment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

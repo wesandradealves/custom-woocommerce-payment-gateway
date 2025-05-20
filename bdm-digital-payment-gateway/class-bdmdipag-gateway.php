@@ -18,13 +18,13 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 	require_once ABSPATH . 'wp-includes/rest-api.php';
 }
 
-register_activation_hook( __FILE__, 'bdm_activate_plugin' );
+register_activation_hook( __FILE__, 'bdmdipag_activate_plugin' );
 /**
  * Ativa o plugin e garante que o WooCommerce está ativo.
  *
  * @return void
  */
-function bdm_activate_plugin() {
+function bdmdipag_activate_plugin() {
 	if ( ! is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 		wp_die(
@@ -33,23 +33,23 @@ function bdm_activate_plugin() {
 			array( 'back_link' => true )
 		);
 	} else {
-		bdm_create_checkout_page();
+		bdmdipag_create_checkout_page();
 	}
 }
 
-add_filter( 'woocommerce_currencies', 'bdm_add_custom_currency' );
+add_filter( 'woocommerce_currencies', 'bdmdipag_add_custom_currency' );
 /**
  * Adiciona a moeda BDM Digital ao WooCommerce.
  *
  * @param array $currencies Moedas existentes.
  * @return array Moedas modificadas.
  */
-function bdm_add_custom_currency( $currencies ) {
+function bdmdipag_add_custom_currency( $currencies ) {
 	$currencies['BDM'] = __( 'BDM Digital', 'bdm-digital-payment-gateway' );
 	return $currencies;
 }
 
-add_filter( 'woocommerce_currency_symbol', 'bdm_add_custom_currency_symbol', 10, 2 );
+add_filter( 'woocommerce_currency_symbol', 'bdmdipag_add_custom_currency_symbol', 10, 2 );
 /**
  * Adiciona o símbolo da moeda BDM Digital.
  *
@@ -57,7 +57,7 @@ add_filter( 'woocommerce_currency_symbol', 'bdm_add_custom_currency_symbol', 10,
  * @param string $currency Código da moeda.
  * @return string Símbolo modificado.
  */
-function bdm_add_custom_currency_symbol( $currency_symbol, $currency ) {
+function bdmdipag_add_custom_currency_symbol( $currency_symbol, $currency ) {
 	switch ( $currency ) {
 		case 'BDM':
 			$currency_symbol = 'BDM';
@@ -83,7 +83,7 @@ add_filter(
  *
  * @return void
  */
-function bdm_create_checkout_page() {
+function bdmdipag_create_checkout_page() {
 	$page = array(
 		'post_title'   => 'BDM Checkout',
 		'post_name'    => 'bdm-checkout',
@@ -99,53 +99,53 @@ function bdm_create_checkout_page() {
 	}
 }
 
-register_deactivation_hook( __FILE__, 'bdm_remove_checkout_page' );
+register_deactivation_hook( __FILE__, 'bdmdipag_remove_checkout_page' );
 /**
  * Remove a página de checkout personalizada do BDM.
  *
  * @return void
  */
-function bdm_remove_checkout_page() {
+function bdmdipag_remove_checkout_page() {
 	$page = get_page_by_path( 'bdm-checkout' );
 	if ( $page ) {
 		wp_delete_post( $page->ID, true );
 	}
 }
 
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'bdm_add_settings_link' );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'bdmdipag_add_settings_link' );
 /**
  * Adiciona link de configurações na página de plugins.
  *
  * @param array $links Links existentes.
  * @return array Links modificados.
  */
-function bdm_add_settings_link( $links ) {
+function bdmdipag_add_settings_link( $links ) {
 	$url           = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=bdm-digital' );
 	$settings_link = '<a href="' . esc_url( $url ) . '">' . __( 'Configurações', 'bdm-digital-payment-gateway' ) . '</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
 }
 
-add_filter( 'theme_page_templates', 'bdm_register_custom_template' );
+add_filter( 'theme_page_templates', 'bdmdipag_register_custom_template' );
 /**
  * Registra template customizado para o checkout BDM.
  *
  * @param array $templates Templates existentes.
  * @return array Templates modificados.
  */
-function bdm_register_custom_template( $templates ) {
+function bdmdipag_register_custom_template( $templates ) {
 	$templates['templates/checkout-template.php'] = __( 'BDM Checkout Template', 'bdm-digital-payment-gateway' );
 	return $templates;
 }
 
-add_filter( 'template_include', 'bdm_load_custom_template' );
+add_filter( 'template_include', 'bdmdipag_load_custom_template' );
 /**
  * Carrega o template customizado para o checkout BDM.
  *
  * @param string $template Caminho do template existente.
  * @return string Caminho do template modificado.
  */
-function bdm_load_custom_template( $template ) {
+function bdmdipag_load_custom_template( $template ) {
 	if ( is_page( 'bdm-checkout' ) ) {
 		$plugin_template = plugin_dir_path( __FILE__ ) . 'templates/checkout-template.php';
 		if ( file_exists( $plugin_template ) ) {
@@ -188,7 +188,7 @@ add_action(
  * @param string $sandbox Modo sandbox.
  * @return string Endpoint da API.
  */
-function bdm_get_api_endpoint( $sandbox ) {
+function bdmdipag_get_api_endpoint( $sandbox ) {
 	return ( $sandbox && 'no' !== $sandbox )
 		? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
 		: 'https://partner.dourado.cash/';
@@ -199,7 +199,7 @@ function bdm_get_api_endpoint( $sandbox ) {
  *
  * @return void
  */
-function bdm_enqueue_scripts() {
+function bdmdipag_enqueue_scripts() {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return;
 	}
@@ -258,12 +258,12 @@ function bdm_enqueue_scripts() {
 			),
 			'settings' => array(
 				'api_key'            => isset( $settings['api_key'] ) ? $settings['api_key'] : '',
-				'endpoint'           => bdm_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ),
+				'endpoint'           => bdmdipag_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ),
 				'asset'              => isset( $settings['asset'] ) ? $settings['asset'] : '',
 				'partner_email'      => isset( $settings['partner_email'] ) ? $settings['partner_email'] : '',
 				'sandbox'            => isset( $settings['sandbox'] ) ? $settings['sandbox'] : '',
 				'consumer_key'       => isset( $settings['rest_key'] ) ? $settings['rest_key'] : '',
-				'endpoint_quotation' => bdm_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ) . 'ecommerce-partner/clients/quotation/all',
+				'endpoint_quotation' => bdmdipag_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ) . 'ecommerce-partner/clients/quotation/all',
 				'consumer_secret'    => isset( $settings['rest_secret'] ) ? $settings['rest_secret'] : '',
 				'site_url'           => get_bloginfo( 'url' ),
 				'site_name'          => get_bloginfo( 'name' ),
@@ -272,17 +272,17 @@ function bdm_enqueue_scripts() {
 
 		wp_localize_script(
 			'bdm-checkout-js',
-			'bdm_checkout_data',
+			'bdmdipag_checkout_data',
 			array_merge(
 				$checkout_data,
 				array(
-					'nonce' => wp_create_nonce( 'bdm_create_order_nonce' ),
+					'nonce' => wp_create_nonce( 'bdmdipag_create_order_nonce' ),
 				)
 			)
 		);
 	}
 }
-add_action( 'wp_enqueue_scripts', 'bdm_enqueue_scripts' );
+add_action( 'wp_enqueue_scripts', 'bdmdipag_enqueue_scripts' );
 add_action( 'wp_ajax_bdmdipag_create_order', 'bdmdipag_create_order' );
 add_action( 'wp_ajax_nopriv_bdmdipag_create_order', 'bdmdipag_create_order' );
 
@@ -293,7 +293,7 @@ add_action( 'wp_ajax_nopriv_bdmdipag_create_order', 'bdmdipag_create_order' );
  */
 function bdmdipag_create_order() {
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bdm_create_order_nonce' ) ) {
+	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bdmdipag_create_order_nonce' ) ) {
 		wp_send_json_error( array( 'message' => 'Nonce verification failed.' ) );
 	}
 	$billing_code  = isset( $_POST['billing_code'] ) ? sanitize_text_field( wp_unslash( $_POST['billing_code'] ) ) : '';
@@ -333,11 +333,11 @@ add_action(
 	'rest_api_init',
 	function () {
 		register_rest_route(
-			'store/v1',
+			'bdmdipag/v1',
 			'/update-payment',
 			array(
 				'methods'             => 'POST',
-				'callback'            => 'bdm_update_payment_status',
+				'callback'            => 'bdmdipag_update_payment_status',
 				'permission_callback' => function () {
 					return is_user_logged_in();
 				},
@@ -352,7 +352,7 @@ add_action(
  * @param WP_REST_Request $request Objeto da requisição REST.
  * @return WP_REST_Response Resposta REST.
  */
-function bdm_update_payment_status( $request ) {
+function bdmdipag_update_payment_status( $request ) {
 	$params   = $request->get_json_params();
 	$order_id = absint( isset( $params['order_id'] ) ? $params['order_id'] : 0 );
 	$status   = strtolower( sanitize_text_field( isset( $params['status'] ) ? $params['status'] : '' ) );
@@ -386,13 +386,13 @@ function bdm_update_payment_status( $request ) {
 	return new WP_REST_Response( array( 'message' => 'Order updated' ), 200 );
 }
 
-add_action( 'plugins_loaded', 'bdm_init_gateway_class' );
+add_action( 'plugins_loaded', 'bdmdipag_init_gateway_class' );
 /**
  * Inicializa a classe do gateway BDM.
  *
  * @return void
  */
-function bdm_init_gateway_class() {
+function bdmdipag_init_gateway_class() {
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		return;
 	}
@@ -464,7 +464,7 @@ function bdm_init_gateway_class() {
 			$this->rest_key      = $this->get_option( 'rest_key' );
 			$this->rest_secret   = $this->get_option( 'rest_secret' );
 
-			$this->endpoint = bdm_get_api_endpoint( $this->sandbox );
+			$this->endpoint = bdmdipag_get_api_endpoint( $this->sandbox );
 
 			add_action(
 				'woocommerce_update_options_payment_gateways_' . $this->id,
