@@ -5,7 +5,7 @@ This repository contains a fully Dockerized WordPress application with Composer 
 - WordPress installed via Composer.
 - MySQL database.
 - PhpMyAdmin for database management.
-- A custom plugin (`bdm-digital-payment-gateway`).
+- A custom plugin (`bdmdipag-gateway`).
 
 ---
 
@@ -85,7 +85,7 @@ Use the credentials defined in the `.env` file for the database:
 ├── composer.json          # Composer configuration for WordPress
 ├── docker-compose.yml     # Docker Compose configuration
 ├── Dockerfile             # Dockerfile for WordPress container
-├── bdm-digital-payment-gateway  # Custom plugin directory
+├── bdmdipag-gateway  # Custom plugin directory
 └── ...
 ```
 
@@ -96,7 +96,7 @@ Use the credentials defined in the `.env` file for the database:
 ### 1. WordPress
 - Installed via Composer.
 - Served on [http://localhost:8000](http://localhost:8000).
-- Custom plugin (`bdm-digital-payment-gateway`) included.
+- Custom plugin (`bdmdipag-gateway`) included.
 
 ### 2. MySQL
 - Runs MySQL 5.7.
@@ -109,7 +109,7 @@ Use the credentials defined in the `.env` file for the database:
 
 ## Custom Plugin
 
-The custom plugin (`bdm-digital-payment-gateway`) is included in the `/bdm-digital-payment-gateway` folder. It is automatically copied into the WordPress plugins directory inside the container during the build process.
+The custom plugin (`bdmdipag-gateway`) is included in the `/bdmdipag-gateway` folder. It is automatically copied into the WordPress plugins directory inside the container during the build process.
 
 ---
 
@@ -162,9 +162,9 @@ This will stop and remove the containers.
    - Ensure the `WORDPRESS_DB_HOST` in `.env` matches the MySQL service name (`mysql`).
 
 2. **Permission Issues**
-   - Ensure the `bdm-digital-payment-gateway` plugin directory has the correct permissions:
+   - Ensure the `bdmdipag-gateway` plugin directory has the correct permissions:
      ```bash
-     chmod -R 755 bdm-digital-payment-gateway
+     chmod -R 755 bdmdipag-gateway
      ```
 
 3. **Rebuilding the Environment**

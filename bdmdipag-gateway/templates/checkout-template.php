@@ -24,7 +24,7 @@ get_header();
 	<ul class="steps d-flex flex-column p-0 m-0">
 		<!-- Step 1: Checkout. -->
 		<li data-section="checkout" id="step-1" class="d-flex flex-column">
-			<h2 class="mb-4"><?php esc_html_e( 'Pedido', 'bdm-digital-payment-gateway' ); ?></h2>
+			<h2 class="mb-4">Pedido</h2>
 
 			<?php
 			if ( class_exists( 'WooCommerce' ) ) {
@@ -34,7 +34,7 @@ get_header();
 
 			<h3 class="d-flex align-items-center gap-2 m-0 mt-4 mb-4">
 				<strong>
-					<?php esc_html_e( 'BDM Digital', 'bdm-digital-payment-gateway' ); ?>
+					BDM Digital
 				</strong>
 				<img width="24" src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . '../assets/img/icon.png' ); ?>" alt="BDM Icon" />
 			</h3>
@@ -47,16 +47,16 @@ get_header();
 				</p>
 			</div>
 
-			<button id="bdm-checkout-button" class="btn btn-primary d-block m-auto col-12 col-sm-auto"><?php esc_html_e( 'Finalizar Pedido', 'bdm-digital-payment-gateway' ); ?></button>
+			<button id="bdm-checkout-button" class="btn btn-primary d-block m-auto col-12 col-sm-auto">Finalizar Pedido</button>
 		</li>
 
 		<!-- Step 2: Payment Instructions -->
 		<li data-section="billingcode" id="step-2" class="d-none flex-column gap-3">
-			<h2 class="m-0"><?php esc_html_e( 'Efetue o pagamento para concluir.', 'bdm-digital-payment-gateway' ); ?></h2>
-			<p class="m-0"><?php esc_html_e( 'Escaneie o QR code ou copie o código abaixo para realizar o pagamento em BDM DIGITAL.', 'bdm-digital-payment-gateway' ); ?><br/>
-				<?php esc_html_e( 'O sistema irá reconhecer automaticamente a transferência.', 'bdm-digital-payment-gateway' ); ?>
+			<h2 class="m-0">Efetue o pagamento para concluir.</h2>
+			<p class="m-0">Escaneie o QR code ou copie o código abaixo para realizar o pagamento em BDM DIGITAL.<br/>
+				O sistema irá reconhecer automaticamente a transferência.
 				<br/><br/>
-				<?php esc_html_e( 'O pagamento pode levar até 5 minutos para a confirmação.', 'bdm-digital-payment-gateway' ); ?>
+				O pagamento pode levar até 5 minutos para a confirmação.
 			</p>
 			<p class="d-flex cotation-block m-0 flex-column text-center align-items-center justify-items-center">
 				<span>R$<span class="amount"></span> | BDM <span class="amount-bdm"></span></span>
@@ -65,7 +65,7 @@ get_header();
 			<div id="qrcode" class="d-flex justify-content-center align-items-center text-center"></div>
 			<p id="expiration" class="text-center col-12 col-sm-auto m-auto d-block mt-2 mb-3">O QR Code e o código expiram em <span id="counter"></span></p>
 			<p id="billingcode" class="d-flex m-auto justify-content-center align-items-center text-center"></p>
-			<button id="bdm-copycode" class="btn btn-primary d-block m-auto col-12 col-sm-auto"><?php esc_html_e( 'Copiar Código', 'bdm-digital-payment-gateway' ); ?></button>
+			<button id="bdm-copycode" class="btn btn-primary d-block m-auto col-12 col-sm-auto">Copiar Código</button>
 		</li>
 
 		<!-- Step 3: Payment Success -->
@@ -74,7 +74,7 @@ get_header();
 				<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . '../assets/img/logo.png' ); ?>" alt="BDM Logo" />
 			</div>
 			
-			<h3 class="me-auto"><?php esc_html_e( 'Pagamento realizado com sucesso!', 'bdm-digital-payment-gateway' ); ?></h3>
+			<h3 class="me-auto">Pagamento realizado com sucesso!</h3>
 
 			<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . '../assets/img/success.png' ); ?>" alt="Success" />
 
@@ -84,8 +84,8 @@ get_header();
 			</p>            
 
 			<p>
-				<?php esc_html_e( 'Seu pagamento em BDM DIGITAL foi confirmado!', 'bdm-digital-payment-gateway' ); ?><br/><br/>
-				<?php esc_html_e( 'Seu pedido já está sendo preparado e em breve será enviado para o seu endereço.', 'bdm-digital-payment-gateway' ); ?>
+				Seu pagamento em BDM DIGITAL foi confirmado!<br/><br/>
+				Seu pedido já está sendo preparado e em breve será enviado para o seu endereço.
 			</p>
 		</li>
 	</ul>
@@ -116,8 +116,8 @@ function bdmdipag_get_checkout_cart() {
 
 	if ( ! empty( $cart_items ) ) {
 		foreach ( $cart_items as $cart_item_key => $cart_item ) {
-			$product_name  = esc_html( $cart_item['data']->get_name() );
-			$quantity      = esc_html( $cart_item['quantity'] );
+			$product_name  = $cart_item['data']->get_name();
+			$quantity      = $cart_item['quantity'];
 			$line_total    = (float) $cart_item['line_total'];
 			$product_price = wc_price( $line_total );
 
@@ -134,7 +134,7 @@ function bdmdipag_get_checkout_cart() {
 		$output .= sprintf( '<li class="cart-footer d-flex justify-content-between align-items-center"><p class="m-0 p-0">Total</p> <p class="m-0 p-0">%s</p></li>', wc_price( $total ) );
 		$output .= '</ul>';
 	} else {
-		$output .= '<p>' . esc_html__( 'No products in cart.', 'bdm-digital-payment-gateway' ) . '</p>';
+		$output .= '<p>No products in cart.</p>';
 	}
 
 	return $output;
