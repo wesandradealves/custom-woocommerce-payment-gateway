@@ -3,19 +3,20 @@
  * Plugin Name: BDM Digital Payment Gateway
  * Description: Um plugin para processar pagamentos utilizando BDM Digital. Suporta geração de QR codes, processamento de pagamentos, validação de transações e fornecimento de confirmações. Permite integração com várias carteiras e serviços associados.
  * Version: 1.2.3
- * Author: Dourado Cash
+ * Author: bdmmercantil
+ * Author URI: https://bdmercantil.com.br
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: bdmdipag-gateway
+ * Requires at least: 6.0
+ * Tested up to: 6.8
+ * Requires PHP: 7.2
  *
  * @package BDM_Digital_Payment_Gateway
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
-}
-
-if ( ! class_exists( 'WP_REST_Response' ) ) {
-	require_once ABSPATH . 'wp-includes/rest-api.php';
 }
 
 register_activation_hook( __FILE__, 'bdmdipag_activate_plugin' );
@@ -28,8 +29,8 @@ function bdmdipag_activate_plugin() {
 	if ( ! is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 		wp_die(
-			esc_html__( 'BDM Digital Payment Gateway requer WooCommerce.', 'bdm-digital-payment-gateway' ),
-			esc_html__( 'Plugin Activation Error', 'bdm-digital-payment-gateway' ),
+			'BDM Digital Payment Gateway requires WooCommerce.',
+			'Plugin Activation Error',
 			array( 'back_link' => true )
 		);
 	} else {
@@ -45,7 +46,7 @@ add_filter( 'woocommerce_currencies', 'bdmdipag_add_custom_currency' );
  * @return array Moedas modificadas.
  */
 function bdmdipag_add_custom_currency( $currencies ) {
-	$currencies['BDM'] = __( 'BDM Digital', 'bdm-digital-payment-gateway' );
+	$currencies['BDM'] = 'BDM Digital';
 	return $currencies;
 }
 
@@ -121,7 +122,7 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'bdmdipag_add_
  */
 function bdmdipag_add_settings_link( $links ) {
 	$url           = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=bdm-digital' );
-	$settings_link = '<a href="' . esc_url( $url ) . '">' . __( 'Configurações', 'bdm-digital-payment-gateway' ) . '</a>';
+	$settings_link = '<a href="' . esc_url( $url ) . '">Configurações</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
 }
@@ -134,7 +135,7 @@ add_filter( 'theme_page_templates', 'bdmdipag_register_custom_template' );
  * @return array Templates modificados.
  */
 function bdmdipag_register_custom_template( $templates ) {
-	$templates['templates/checkout-template.php'] = __( 'BDM Checkout Template', 'bdm-digital-payment-gateway' );
+	$templates['templates/checkout-template.php'] = 'BDM Checkout Template';
 	return $templates;
 }
 
@@ -221,11 +222,19 @@ function bdmdipag_enqueue_scripts() {
 			'all'
 		);
 		wp_enqueue_script(
-			'bdm-checkout-js',
-			$plugin_url . '/assets/js/main.js',
+			'bdmdipag-main',
+			plugins_url( 'assets/js/main.min.js', __FILE__ ),
 			array( 'jquery' ),
-			filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/main.js' ),
+			'1.0.0',
 			true
+		);
+		wp_localize_script(
+			'bdmdipag-main',
+			'bdmdipagAjax',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'bdmdipag-ajax-nonce' ),
+			)
 		);
 		wp_enqueue_script(
 			'toast-js',
@@ -380,7 +389,7 @@ function bdmdipag_update_payment_status( $request ) {
 		$order->payment_complete();
 		$order->update_status( $status );
 	} elseif ( 'failed' === $status ) {
-		$order->update_status( 'failed', __( 'Pagamento falhou via BDM.', 'bdm-digital-payment-gateway' ) );
+		$order->update_status( 'failed', 'Pagamento falhou via BDM.' );
 	}
 
 	return new WP_REST_Response( array( 'message' => 'Order updated' ), 200 );
@@ -449,8 +458,8 @@ function bdmdipag_init_gateway_class() {
 		 */
 		public function __construct() {
 			$this->id                 = 'bdm-digital';
-			$this->method_title       = __( 'BDM Digital', 'bdm-digital-payment-gateway' );
-			$this->method_description = __( 'Accept payments via BDM Digital.', 'bdm-digital-payment-gateway' );
+			$this->method_title       = 'BDM Digital';
+			$this->method_description = 'Accept payments via BDM Digital.';
 			$this->supports           = array( 'products' );
 
 			$this->init_form_fields();
@@ -480,47 +489,47 @@ function bdmdipag_init_gateway_class() {
 		public function init_form_fields() {
 			$this->form_fields = array(
 				'enabled'       => array(
-					'title'   => __( 'Enable/Disable', 'bdm-digital-payment-gateway' ),
+					'title'   => 'Enable/Disable',
 					'type'    => 'checkbox',
-					'label'   => __( 'Enable BDM Digital Payment', 'bdm-digital-payment-gateway' ),
+					'label'   => 'Enable BDM Digital Payment',
 					'default' => 'no',
 				),
 				'title'         => array(
-					'title'   => __( 'Title', 'bdm-digital-payment-gateway' ),
+					'title'   => 'Title',
 					'type'    => 'text',
-					'default' => __( 'BDM Digital Payment', 'bdm-digital-payment-gateway' ),
+					'default' => 'BDM Digital Payment',
 				),
 				'api_key'       => array(
-					'title'       => __( 'API Key', 'bdm-digital-payment-gateway' ),
+					'title'       => 'API Key',
 					'type'        => 'text',
-					'description' => __( 'Enter your API Key', 'bdm-digital-payment-gateway' ),
+					'description' => 'Enter your API Key',
 					'default'     => '',
 				),
 				'partner_email' => array(
-					'title'       => __( 'Partner Email', 'bdm-digital-payment-gateway' ),
+					'title'       => 'Partner Email',
 					'type'        => 'email',
-					'description' => __( 'Enter your partner email', 'bdm-digital-payment-gateway' ),
+					'description' => 'Enter your partner email',
 					'default'     => '',
 				),
 				'asset'         => array(
-					'title'   => __( 'Asset', 'bdm-digital-payment-gateway' ),
+					'title'   => 'Asset',
 					'type'    => 'text',
 					'default' => 'BDM',
 				),
 				'sandbox'       => array(
-					'title'       => __( 'Sandbox Mode', 'bdm-digital-payment-gateway' ),
+					'title'       => 'Sandbox Mode',
 					'type'        => 'checkbox',
-					'label'       => __( 'Enable Sandbox Mode', 'bdm-digital-payment-gateway' ),
+					'label'       => 'Enable Sandbox Mode',
 					'default'     => 'no',
-					'description' => __( 'Use the sandbox API endpoint for testing.', 'bdm-digital-payment-gateway' ),
+					'description' => 'Use the sandbox API endpoint for testing.',
 				),
 				'rest_key'      => array(
-					'title'   => __( 'REST API Key', 'bdm-digital-payment-gateway' ),
+					'title'   => 'REST API Key',
 					'type'    => 'text',
 					'default' => '',
 				),
 				'rest_secret'   => array(
-					'title'   => __( 'REST API Secret', 'bdm-digital-payment-gateway' ),
+					'title'   => 'REST API Secret',
 					'type'    => 'text',
 					'default' => '',
 				),
