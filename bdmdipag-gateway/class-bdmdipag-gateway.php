@@ -10,7 +10,7 @@
  * Text Domain: bdmdipag-gateway
  * Requires at least: 6.0
  * Tested up to: 6.8
- * Requires PHP: 7.2
+ * Requires PHP: 7.4
  *
  * @package BDM_Digital_Payment_Gateway
  */
