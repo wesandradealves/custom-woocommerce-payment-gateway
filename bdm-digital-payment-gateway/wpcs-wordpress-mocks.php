@@ -1,5 +1,6 @@
 <?php
 // Arquivo de mocks para rodar PHPCS sem erros de funções WordPress.
+// This file is for development/testing only and should not be included in the production plugin release. Remove this file before submitting to the WordPress repository.
 if ( ! function_exists( 'add_action' ) ) {
 	function add_action() {}
 }

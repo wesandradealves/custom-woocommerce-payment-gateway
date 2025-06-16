@@ -2,15 +2,15 @@
 /**
  * Plugin Name: BDM Digital Payment Gateway
  * Description: Um plugin para processar pagamentos utilizando BDM Digital. Suporta geração de QR codes, processamento de pagamentos, validação de transações e fornecimento de confirmações. Permite integração com várias carteiras e serviços associados.
- * Version: 1.2.3
+ * Version: 1.2.5
  * Author: bdmmercantil
  * Author URI: https://bdmercantil.com.br
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: bdmdipag-gateway
+ * Text Domain: bdm-digital-payment-gateway
  * Requires at least: 6.0
  * Tested up to: 6.8
- * Requires PHP: 7.2
+ * Requires PHP: 7.4
  *
  * @package BDM_Digital_Payment_Gateway
  */
@@ -19,13 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-register_activation_hook( __FILE__, 'bdmdipag_activate_plugin' );
+register_activation_hook( __FILE__, 'bdm_digital_payment_gateway_activate_plugin' );
 /**
  * Ativa o plugin e garante que o WooCommerce está ativo.
  *
  * @return void
  */
-function bdmdipag_activate_plugin() {
+function bdm_digital_payment_gateway_activate_plugin() {
 	if ( ! is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 		wp_die(
@@ -34,23 +34,23 @@ function bdmdipag_activate_plugin() {
 			array( 'back_link' => true )
 		);
 	} else {
-		bdmdipag_create_checkout_page();
+		bdm_digital_payment_gateway_create_checkout_page();
 	}
 }
 
-add_filter( 'woocommerce_currencies', 'bdmdipag_add_custom_currency' );
+add_filter( 'woocommerce_currencies', 'bdm_digital_payment_gateway_add_custom_currency' );
 /**
  * Adiciona a moeda BDM Digital ao WooCommerce.
  *
  * @param array $currencies Moedas existentes.
  * @return array Moedas modificadas.
  */
-function bdmdipag_add_custom_currency( $currencies ) {
+function bdm_digital_payment_gateway_add_custom_currency( $currencies ) {
 	$currencies['BDM'] = 'BDM Digital';
 	return $currencies;
 }
 
-add_filter( 'woocommerce_currency_symbol', 'bdmdipag_add_custom_currency_symbol', 10, 2 );
+add_filter( 'woocommerce_currency_symbol', 'bdm_digital_payment_gateway_add_custom_currency_symbol', 10, 2 );
 /**
  * Adiciona o símbolo da moeda BDM Digital.
  *
@@ -58,7 +58,7 @@ add_filter( 'woocommerce_currency_symbol', 'bdmdipag_add_custom_currency_symbol'
  * @param string $currency Código da moeda.
  * @return string Símbolo modificado.
  */
-function bdmdipag_add_custom_currency_symbol( $currency_symbol, $currency ) {
+function bdm_digital_payment_gateway_add_custom_currency_symbol( $currency_symbol, $currency ) {
 	switch ( $currency ) {
 		case 'BDM':
 			$currency_symbol = 'BDM';
@@ -84,7 +84,7 @@ add_filter(
  *
  * @return void
  */
-function bdmdipag_create_checkout_page() {
+function bdm_digital_payment_gateway_create_checkout_page() {
 	$page = array(
 		'post_title'   => 'BDM Checkout',
 		'post_name'    => 'bdm-checkout',
@@ -100,53 +100,53 @@ function bdmdipag_create_checkout_page() {
 	}
 }
 
-register_deactivation_hook( __FILE__, 'bdmdipag_remove_checkout_page' );
+register_deactivation_hook( __FILE__, 'bdm_digital_payment_gateway_remove_checkout_page' );
 /**
  * Remove a página de checkout personalizada do BDM.
  *
  * @return void
  */
-function bdmdipag_remove_checkout_page() {
+function bdm_digital_payment_gateway_remove_checkout_page() {
 	$page = get_page_by_path( 'bdm-checkout' );
 	if ( $page ) {
 		wp_delete_post( $page->ID, true );
 	}
 }
 
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'bdmdipag_add_settings_link' );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'bdm_digital_payment_gateway_add_settings_link' );
 /**
  * Adiciona link de configurações na página de plugins.
  *
  * @param array $links Links existentes.
  * @return array Links modificados.
  */
-function bdmdipag_add_settings_link( $links ) {
+function bdm_digital_payment_gateway_add_settings_link( $links ) {
 	$url           = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=bdm-digital' );
 	$settings_link = '<a href="' . esc_url( $url ) . '">Configurações</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
 }
 
-add_filter( 'theme_page_templates', 'bdmdipag_register_custom_template' );
+add_filter( 'theme_page_templates', 'bdm_digital_payment_gateway_register_custom_template' );
 /**
  * Registra template customizado para o checkout BDM.
  *
  * @param array $templates Templates existentes.
  * @return array Templates modificados.
  */
-function bdmdipag_register_custom_template( $templates ) {
+function bdm_digital_payment_gateway_register_custom_template( $templates ) {
 	$templates['templates/checkout-template.php'] = 'BDM Checkout Template';
 	return $templates;
 }
 
-add_filter( 'template_include', 'bdmdipag_load_custom_template' );
+add_filter( 'template_include', 'bdm_digital_payment_gateway_load_custom_template' );
 /**
  * Carrega o template customizado para o checkout BDM.
  *
  * @param string $template Caminho do template existente.
  * @return string Caminho do template modificado.
  */
-function bdmdipag_load_custom_template( $template ) {
+function bdm_digital_payment_gateway_load_custom_template( $template ) {
 	if ( is_page( 'bdm-checkout' ) ) {
 		$plugin_template = plugin_dir_path( __FILE__ ) . 'templates/checkout-template.php';
 		if ( file_exists( $plugin_template ) ) {
@@ -156,15 +156,15 @@ function bdmdipag_load_custom_template( $template ) {
 	return $template;
 }
 
-add_filter( 'woocommerce_payment_gateways', 'bdmdipag_register_gateway_class' );
+add_filter( 'woocommerce_payment_gateways', 'bdm_digital_payment_gateway_register_gateway_class' );
 /**
  * Registra a classe do gateway BDM no WooCommerce.
  *
  * @param array $gateways Gateways existentes.
  * @return array Gateways modificados.
  */
-function bdmdipag_register_gateway_class( $gateways ) {
-	$gateways[] = 'BDMDIPAG_Gateway';
+function bdm_digital_payment_gateway_register_gateway_class( $gateways ) {
+	$gateways[] = 'BDM_Digital_Payment_Gateway_Gateway';
 	return $gateways;
 }
 
@@ -189,7 +189,7 @@ add_action(
  * @param string $sandbox Modo sandbox.
  * @return string Endpoint da API.
  */
-function bdmdipag_get_api_endpoint( $sandbox ) {
+function bdm_digital_payment_gateway_get_api_endpoint( $sandbox ) {
 	return ( $sandbox && 'no' !== $sandbox )
 		? 'https://opiihi8ab4.execute-api.us-east-2.amazonaws.com/'
 		: 'https://partner.dourado.cash/';
@@ -200,7 +200,7 @@ function bdmdipag_get_api_endpoint( $sandbox ) {
  *
  * @return void
  */
-function bdmdipag_enqueue_scripts() {
+function bdm_digital_payment_gateway_enqueue_scripts() {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return;
 	}
@@ -222,35 +222,20 @@ function bdmdipag_enqueue_scripts() {
 			'all'
 		);
 		wp_enqueue_script(
-			'bdmdipag-main',
-			plugins_url( 'assets/js/main.min.js', __FILE__ ),
+			'bdm-digital-payment-gateway-main',
+			plugins_url( 'assets/js/main.js', __FILE__ ),
 			array( 'jquery' ),
 			'1.0.0',
 			true
 		);
 		wp_localize_script(
-			'bdmdipag-main',
-			'bdmdipagAjax',
+			'bdm-digital-payment-gateway-main',
+			'bdm_digital_payment_gateway_Ajax',
 			array(
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'bdmdipag-ajax-nonce' ),
+				'nonce'    => wp_create_nonce( 'bdm_digital_payment_gateway-ajax-nonce' ),
 			)
 		);
-		wp_enqueue_script(
-			'toast-js',
-			$plugin_url . '/assets/js/jquery.toast.min.js',
-			array( 'jquery' ),
-			'1.3.2',
-			true
-		);
-		wp_enqueue_style(
-			'toast-css',
-			$plugin_url . '/assets/css/jquery.toast.min.css',
-			array(),
-			'1.3.2',
-			'all'
-		);
-
 		$settings = get_option( 'woocommerce_bdm-digital_settings' );
 
 		$checkout_data = array(
@@ -267,12 +252,12 @@ function bdmdipag_enqueue_scripts() {
 			),
 			'settings' => array(
 				'api_key'            => isset( $settings['api_key'] ) ? $settings['api_key'] : '',
-				'endpoint'           => bdmdipag_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ),
+				'endpoint'           => bdm_digital_payment_gateway_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ),
 				'asset'              => isset( $settings['asset'] ) ? $settings['asset'] : '',
 				'partner_email'      => isset( $settings['partner_email'] ) ? $settings['partner_email'] : '',
 				'sandbox'            => isset( $settings['sandbox'] ) ? $settings['sandbox'] : '',
 				'consumer_key'       => isset( $settings['rest_key'] ) ? $settings['rest_key'] : '',
-				'endpoint_quotation' => bdmdipag_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ) . 'ecommerce-partner/clients/quotation/all',
+				'endpoint_quotation' => bdm_digital_payment_gateway_get_api_endpoint( isset( $settings['sandbox'] ) ? $settings['sandbox'] : '' ) . 'ecommerce-partner/clients/quotation/all',
 				'consumer_secret'    => isset( $settings['rest_secret'] ) ? $settings['rest_secret'] : '',
 				'site_url'           => get_bloginfo( 'url' ),
 				'site_name'          => get_bloginfo( 'name' ),
@@ -280,29 +265,43 @@ function bdmdipag_enqueue_scripts() {
 		);
 
 		wp_localize_script(
-			'bdm-checkout-js',
-			'bdmdipag_checkout_data',
+			'bdm-digital-payment-gateway-main',
+			'bdm_digital_payment_gateway_checkout_data',
 			array_merge(
 				$checkout_data,
 				array(
-					'nonce' => wp_create_nonce( 'bdmdipag_create_order_nonce' ),
+					'nonce' => wp_create_nonce( 'bdm_digital_payment_gateway_create_order_nonce' ),
 				)
 			)
 		);
+		wp_enqueue_script(
+			'toast-js',
+			$plugin_url . '/assets/js/jquery.toast.min.js',
+			array( 'jquery' ),
+			'1.3.2',
+			true
+		);
+		wp_enqueue_style(
+			'toast-css',
+			$plugin_url . '/assets/css/jquery.toast.min.css',
+			array(),
+			'1.3.2',
+			'all'
+		);
 	}
 }
-add_action( 'wp_enqueue_scripts', 'bdmdipag_enqueue_scripts' );
-add_action( 'wp_ajax_bdmdipag_create_order', 'bdmdipag_create_order' );
-add_action( 'wp_ajax_nopriv_bdmdipag_create_order', 'bdmdipag_create_order' );
+add_action( 'wp_enqueue_scripts', 'bdm_digital_payment_gateway_enqueue_scripts' );
+add_action( 'wp_ajax_bdm_digital_payment_gateway_create_order', 'bdm_digital_payment_gateway_create_order' );
+add_action( 'wp_ajax_nopriv_bdm_digital_payment_gateway_create_order', 'bdm_digital_payment_gateway_create_order' );
 
 /**
  * Lida com a criação de pedidos BDM via AJAX.
  *
  * @return void
  */
-function bdmdipag_create_order() {
+function bdm_digital_payment_gateway_create_order() {
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bdmdipag_create_order_nonce' ) ) {
+	if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'bdm_digital_payment_gateway_create_order_nonce' ) ) {
 		wp_send_json_error( array( 'message' => 'Nonce verification failed.' ) );
 	}
 	$billing_code  = isset( $_POST['billing_code'] ) ? sanitize_text_field( wp_unslash( $_POST['billing_code'] ) ) : '';
@@ -342,11 +341,11 @@ add_action(
 	'rest_api_init',
 	function () {
 		register_rest_route(
-			'bdmdipag/v1',
+			'bdm_digital_payment_gateway/v1',
 			'/update-payment',
 			array(
 				'methods'             => 'POST',
-				'callback'            => 'bdmdipag_update_payment_status',
+				'callback'            => 'bdm_digital_payment_gateway_update_payment_status',
 				'permission_callback' => function () {
 					return is_user_logged_in();
 				},
@@ -361,7 +360,7 @@ add_action(
  * @param WP_REST_Request $request Objeto da requisição REST.
  * @return WP_REST_Response Resposta REST.
  */
-function bdmdipag_update_payment_status( $request ) {
+function bdm_digital_payment_gateway_update_payment_status( $request ) {
 	$params   = $request->get_json_params();
 	$order_id = absint( isset( $params['order_id'] ) ? $params['order_id'] : 0 );
 	$status   = strtolower( sanitize_text_field( isset( $params['status'] ) ? $params['status'] : '' ) );
@@ -395,13 +394,13 @@ function bdmdipag_update_payment_status( $request ) {
 	return new WP_REST_Response( array( 'message' => 'Order updated' ), 200 );
 }
 
-add_action( 'plugins_loaded', 'bdmdipag_init_gateway_class' );
+add_action( 'plugins_loaded', 'bdm_digital_payment_gateway_init_gateway_class' );
 /**
  * Inicializa a classe do gateway BDM.
  *
  * @return void
  */
-function bdmdipag_init_gateway_class() {
+function bdm_digital_payment_gateway_init_gateway_class() {
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		return;
 	}
@@ -409,7 +408,7 @@ function bdmdipag_init_gateway_class() {
 	/**
 	 * Classe do gateway BDM Digital.
 	 */
-	class BDMDIPAG_Gateway extends WC_Payment_Gateway {
+	class BDM_Digital_Payment_Gateway_Gateway extends WC_Payment_Gateway {
 		/**
 		 * API Key utilizada para autenticação.
 		 *
@@ -473,7 +472,7 @@ function bdmdipag_init_gateway_class() {
 			$this->rest_key      = $this->get_option( 'rest_key' );
 			$this->rest_secret   = $this->get_option( 'rest_secret' );
 
-			$this->endpoint = bdmdipag_get_api_endpoint( $this->sandbox );
+			$this->endpoint = bdm_digital_payment_gateway_get_api_endpoint( $this->sandbox );
 
 			add_action(
 				'woocommerce_update_options_payment_gateways_' . $this->id,

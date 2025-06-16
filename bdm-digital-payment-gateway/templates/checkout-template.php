@@ -28,7 +28,7 @@ get_header();
 
 			<?php
 			if ( class_exists( 'WooCommerce' ) ) {
-				echo wp_kses_post( bdmdipag_get_checkout_cart() );
+				echo wp_kses_post( bdm_digital_payment_gateway_get_checkout_cart() );
 			}
 			?>
 
@@ -105,7 +105,7 @@ get_header();
  *
  * @return string HTML of cart items and total.
  */
-function bdmdipag_get_checkout_cart() {
+function bdm_digital_payment_gateway_get_checkout_cart() {
 	$cart_items = WC()->cart->get_cart();
 	$total      = 0;
 	$output     = '<ul class="cart">
