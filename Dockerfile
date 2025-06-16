@@ -77,9 +77,9 @@ RUN composer require vlucas/phpdotenv && \
     composer install --no-dev --optimize-autoloader
 
 # Copy only the plugin to be fixed and phpcs.xml first
-COPY ./bdmdipag-gateway ./wp-content/plugins/bdmdipag-gateway
+COPY ./bdm-digital-payment-gateway ./wp-content/plugins/bdm-digital-payment-gateway
 COPY phpcs.xml ./
-COPY ./bdmdipag-gateway/wpcs-wordpress-mocks.php ./wp-content/plugins/bdmdipag-gateway/wpcs-wordpress-mocks.php
+COPY ./bdm-digital-payment-gateway/wpcs-wordpress-mocks.php ./wp-content/plugins/bdm-digital-payment-gateway/wpcs-wordpress-mocks.php
 
 # Corrigir automaticamente o código do plugin conforme o padrão WordPress
 WORKDIR /var/www/html
@@ -89,7 +89,7 @@ RUN composer global update && \
     ~/.composer/vendor/bin/phpcs -i
 
 # Executar PHPCS com bootstrap dos mocks
-RUN ~/.composer/vendor/bin/phpcs --standard=phpcs.xml --bootstrap=wp-content/plugins/bdmdipag-gateway/wpcs-wordpress-mocks.php wp-content/plugins/bdmdipag-gateway/
+RUN ~/.composer/vendor/bin/phpcs --standard=phpcs.xml --bootstrap=wp-content/plugins/bdm-digital-payment-gateway/wpcs-wordpress-mocks.php wp-content/plugins/bdm-digital-payment-gateway/
 
 # Now copy in the rest of the plugins and themes
 COPY ./woocommerce ./wp-content/plugins/woocommerce

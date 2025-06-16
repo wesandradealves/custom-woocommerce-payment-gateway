@@ -25,4 +25,9 @@
 
     <!-- Remove deprecated sniff -->
     <exclude name="Generic.Functions.CallTimePassByReference" />
+
+    <!-- Excluir nomes de arquivos de classe inválidos -->
+    <rule ref="WordPress">
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+    </rule>
 </ruleset>

@@ -1,4 +1,6 @@
 (function ($, window, document) {
+    console.log("[BDM Checkout] Initializing...");
+
     const BDM = {
         config: {
             checkInterval: 15000,
@@ -31,8 +33,8 @@
         },
 
         init: async function () {
-            this.state.settings = bdmdipag_checkout_data?.settings;
-            this.state.products = bdmdipag_checkout_data?.products;
+            this.state.settings = bdm_digital_payment_gateway_checkout_data?.settings;
+            this.state.products = bdm_digital_payment_gateway_checkout_data?.products;
 
             if (!this.state.settings || !this.state.products) {
                 console.error("[BDM Checkout] Missing configuration data.");
@@ -138,7 +140,7 @@
 
         createWooCommerceOrder: function (amount) {
             const { partner_email } = this.state.settings;
-            const nonce = bdmdipag_checkout_data && bdmdipag_checkout_data.nonce;
+            const nonce = bdm_digital_payment_gateway_checkout_data && bdm_digital_payment_gateway_checkout_data.nonce;
             if (!nonce) {
                 console.error("[BDM Checkout] Nonce ausente. Não é possível criar o pedido.");
                 Toast.error("Erro de segurança: nonce ausente. Recarregue a página.");
@@ -146,8 +148,8 @@
             }
             console.log("[BDM Checkout] Enviando nonce:", nonce);
             return new Promise((resolve, reject) => {
-                $.post(bdmdipagAjax.ajax_url, {
-                    action: "bdmdipag_create_order",
+                $.post(bdm_digital_payment_gateway_Ajax.ajax_url, {
+                    action: "bdm_digital_payment_gateway_create_order",
                     billing_code: sessionStorage.getItem("billingcode"),
                     amount: amount,
                     partner_email: partner_email,
@@ -236,7 +238,7 @@
 
         updateOrderStatus: async function (orderId, status) {
             try {
-                await fetch("/wp-json/bdmdipag/v1/update-payment", {
+                await fetch("/wp-json/bdm_digital_payment_gateway/v1/update-payment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
